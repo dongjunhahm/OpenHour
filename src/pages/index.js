@@ -1,16 +1,17 @@
-"use client";
-import axios from "axios";
-import { useState, useEffect } from "react";
-import { getAuth, onAuthStateChanged, signOut} from "firebase/auth";
-import "../styles/globals.css";
+"use client"
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Dashboard from "../pages/dashboard";
+import LoginPage from "../pages/loginPage";
 
 const Home = () => {
-
-  return (
-    <div>
-      <button>Hi world</button>
-    </div>
-  );
+    return (
+        <Router>
+            <Routes>
+                <Route path="/" element={<LoginPage />} />
+                <Route path="dashboard" element={<Dashboard />} />
+            </Routes>
+        </Router>
+    );
 };
 
 export default Home;
