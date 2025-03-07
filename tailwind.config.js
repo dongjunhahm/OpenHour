@@ -15,6 +15,6 @@ module.exports = {
   },
   plugins: [require("daisyui")],
   images: {
-    domains: ["www.google.com"],
+    domains: ["www.google.com", "www.freeiconspng.com"],
   },
 };
