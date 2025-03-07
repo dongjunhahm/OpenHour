@@ -3,12 +3,14 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged, signOut} from "firebase/auth";
 import "../styles/globals.css";
-import LoginButton from "../app/components/loginButton";
+import LoginButton from "../components/loginButton";
+import { useRouter } from "next/router";
 
 const LoginPage = () => {
   const [userToken, setUserToken] = useState("");
   const [user, setUser] = useState(null);
   const [showLoginButton, setShowLoginButton] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
@@ -21,6 +23,8 @@ const LoginPage = () => {
         setShowLoginButton(true);
       }
     });
+
+    return () => unsubscribe();
   }, []);
 
 

@@ -1,9 +1,8 @@
 "use client";
-import { useNavigate } from "react-router-dom";
-
+import { useRouter } from "next/router";
 const Dashboard = () => {
     const router = useRouter();
-    
+
     return (
         <div>
             Hello World!

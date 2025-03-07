@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { googleSignIn } from "../../pages/api/googleLogin";
+import { googleSignIn } from "../pages/api/googleLogin";
+import { useRouter } from "next/router";
 
 const LoginButton = ({ setUserToken }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+
     const handleLogin = async () => {
         setIsLoading(true);
         try {
@@ -17,6 +20,7 @@ const LoginButton = ({ setUserToken }) => {
         } finally {
             setIsLoading(false);
         }
+        router.push("/dashboard");
     };
 
     return (
