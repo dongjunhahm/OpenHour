@@ -1,12 +1,15 @@
-"use client"
+"use client";
 import { useRouter } from "next/router";
+import LoginPage from "./loginPage";
 
 const Home = () => {
-    const router = useRouter();
+  const router = useRouter();
 
-    return (
-       <button onClick={() => router.push('/loginPage')} >Click Me!</button>
-    );
+  return (
+    <div data-theme="light">
+      <LoginPage></LoginPage>
+    </div>
+  );
 };
 
 export default Home;

@@ -1,14 +1,9 @@
 "use client";
 import { useRouter } from "next/router";
 const Dashboard = () => {
-    const router = useRouter();
+  const router = useRouter();
 
-    return (
-        <div>
-            Hello World!
-        </div>
-    );
+  return <div>Hello World!</div>;
 };
 
 export default Dashboard;
-
