@@ -1,13 +1,13 @@
 "use client";
 import { useRouter } from "next/router";
-import LoginPage from "./loginPage";
+import Landing from "./landing";
 
 const Home = () => {
   const router = useRouter();
 
   return (
     <div data-theme="light">
-      <LoginPage></LoginPage>
+      <Landing></Landing>
     </div>
   );
 };
