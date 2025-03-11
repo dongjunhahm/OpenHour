@@ -2,6 +2,8 @@ import { googleSignIn } from "../pages/api/googleLogin";
 import { useRouter } from "next/router";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import React, { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { setToken } from "../store/tokenSlice";
 
 const LoginForm = () => {
   const [userToken, setUserToken] = useState("");
@@ -9,6 +11,7 @@ const LoginForm = () => {
   const [showLoginButton, setShowLoginButton] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const auth = getAuth();
@@ -39,15 +42,16 @@ const LoginForm = () => {
       const result = await googleSignIn();
       if (result) {
         const { token } = result;
+        dispatch(setToken(token));
         console.log(token);
         setUserToken(token);
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error("Error during Google Sign In:", error);
     } finally {
       setIsLoading(false);
     }
-    router.push("/dashboard");
   };
 
   return (
