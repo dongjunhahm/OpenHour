@@ -72,6 +72,10 @@ const CalendarMenuOverlay = ({ onClose }) => {
         className="bg-white bg-opacity-80 p-8 rounded-lg shadow-xl"
         onClick={stopPropagation}
       >
+        <div className="">
+          <h2 className="card-title">GroupCal Creation</h2>
+          <p>Choose any week and your required time!</p>
+        </div>
         <div>
           <div>
             <EventsList events={events}></EventsList>
