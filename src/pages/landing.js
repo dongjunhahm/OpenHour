@@ -37,7 +37,7 @@ const Landing = () => {
           </h1>
         </div>
 
-        <div className="text-9xl">random shit</div>
+        <div className="text-9xl">random text here </div>
       </div>
       <Footer></Footer>
     </div>
