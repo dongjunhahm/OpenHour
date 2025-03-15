@@ -36,6 +36,14 @@ const CalendarMenuOverlay = ({ onClose }) => {
     const fetchEvents = async () => {};
   }, [token]);
 
+  const readEvents = async () => {
+    const response = await axios.post("/api/read-events", {
+      user_token: { token },
+    });
+
+    console.log(response);
+  };
+
   const createSharedCalendar = async () => {
     const response = await axios.post("/api/store-events", {
       user_token: { token },
@@ -81,6 +89,9 @@ const CalendarMenuOverlay = ({ onClose }) => {
             <EventsList events={events}></EventsList>
           </div>
           <DatePicker onChange={handleDateChange}></DatePicker>
+        </div>
+        <div>
+          <button onClick={readEvents}>jason son</button>
         </div>
         <button
           className="btn btn-outline btn-ghost opacity-80 btn-circle w-full transition-transform duration-200 hover:scale-95"

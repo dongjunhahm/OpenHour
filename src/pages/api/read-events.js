@@ -2,14 +2,16 @@ import { google } from "googleapis";
 
 export default async function handler(req, res) {
   try {
-    const { events, token } = req.body;
+    const { token, startDate, endDate } = req.body;
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: token });
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
     const listedEvents = await calendar.events.list({
       calendarId: "primary",
-      maxResults: 50,
+      maxResults: 100,
+      startDate: startDate,
+      endDate: endDate,
     });
     const response = { listedEvents };
 
