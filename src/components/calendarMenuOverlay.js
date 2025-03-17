@@ -26,6 +26,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
         endDate: endDate,
       });
       setEvents(fetchedEvents);
+      console.log()
     } catch (error) {
       console.error("error fetching events", error);
     }
@@ -35,14 +36,6 @@ const CalendarMenuOverlay = ({ onClose }) => {
     console.log("Token in dashboard:", token);
     const fetchEvents = async () => {};
   }, [token]);
-
-  const readEvents = async () => {
-    const response = await axios.post("/api/read-events", {
-      user_token: { token },
-    });
-
-    console.log(response);
-  };
 
   const createSharedCalendar = async () => {
     const response = await axios.post("/api/store-events", {
