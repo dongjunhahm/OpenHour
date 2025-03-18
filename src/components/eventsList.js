@@ -1,6 +1,6 @@
 import React from "react";
 
-const EventsList = () => {
+const EventsList = ({ events }) => {
   const events = [];
 
   //sort events by date and take 10 soonest
