@@ -10,10 +10,30 @@ const CalendarMenuOverlay = ({ onClose }) => {
   const token = useSelector((state) => state.token.token);
   const [dateRange, setDateRange] = useState("");
   const [events, setEvents] = useState([]);
+  const [formattedDateRange, setFormattedDateRange] = useState(
+    "Select a date range."
+  );
 
   const handleDateChange = (event) => {
     const selectedRange = event.target.value;
     setDateRange(selectedRange);
+
+    if (selectedRange) {
+      const [startDate, endDate] = selectedRange.split("/");
+      const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+      };
+
+      setFormattedDateRange(
+        `${formatDate(startDate)} - ${formatDate(endDate)}`
+      );
+    } else {
+      setFormattedDateRange("Select a date range.");
+    }
   };
 
   const handleFetchEvents = async () => {
@@ -26,7 +46,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
         endDate: endDate,
       });
       setEvents(fetchedEvents);
-      console.log()
+      console.log();
     } catch (error) {
       console.error("error fetching events", error);
     }
@@ -77,14 +97,17 @@ const CalendarMenuOverlay = ({ onClose }) => {
           <h2 className="card-title">GroupCal Creation</h2>
           <p>Choose any week and your required time!</p>
         </div>
+
+        <div className="mb-4 text-center">
+          <p className="text-xl font-semibold text-gray-700">
+            {formattedDateRange}
+          </p>
+        </div>
         <div>
-          <div>
-            <EventsList events={events}></EventsList>
-          </div>
           <DatePicker onChange={handleDateChange}></DatePicker>
         </div>
         <div>
-          <button onClick={readEvents}>jason son</button>
+          <button onClick={handleFetchEvents}>jason son</button>
         </div>
         <button
           className="btn btn-outline btn-ghost opacity-80 btn-circle w-full transition-transform duration-200 hover:scale-95"
