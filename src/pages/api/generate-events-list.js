@@ -9,12 +9,15 @@ export default async function handler(req, res) {
 
     const listedEvents = await calendar.events.list({
       calendarId: "primary",
+      timeMin: new Date().toISOString(), // Only get future events
+      orderBy: "startTime",
+      singleEvents: true, // Expand recurring events
       maxResults: 10,
     });
     const response = listedEvents.data.items;
 
-    console.log("evenst found :", listedEvents.data.items);
-    res.status(200).json({ message: "Events Found", event: response.data });
+    //console.log("events found:", response);
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error finding events:", error.message);
     res.status(500).json({ error: "error finding events" });
