@@ -1,8 +1,7 @@
 import { useRouter } from "next/router";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import React, { useState, useEffect } from "react";
-import EventsList from "../components/eventsList";
+import React, { useState } from "react";
 import DatePicker from "../components/datePicker";
 
 const CalendarMenuOverlay = ({ onClose }) => {
@@ -14,8 +13,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
     "Select a date range."
   );
 
-  const handleDateChange = (event) => {
-    const selectedRange = event.target.value;
+  const handleDateRangeChange = (selectedRange) => {
     setDateRange(selectedRange);
 
     if (selectedRange) {
@@ -37,6 +35,11 @@ const CalendarMenuOverlay = ({ onClose }) => {
   };
 
   const handleFetchEvents = async () => {
+    if (!dateRange) {
+      console.error("No date range selected");
+      return;
+    }
+
     const [startDate, endDate] = dateRange.split("/");
 
     try {
@@ -45,42 +48,20 @@ const CalendarMenuOverlay = ({ onClose }) => {
         startDate: startDate,
         endDate: endDate,
       });
-      setEvents(fetchedEvents);
-      console.log();
+      setEvents(fetchedEvents.data);
+      console.log("Fetched events", fetchedEvents.data);
     } catch (error) {
-      console.error("error fetching events", error);
+      console.error("Error fetching events", error);
     }
-  };
-
-  useEffect(() => {
-    console.log("Token in dashboard:", token);
-    const fetchEvents = async () => {};
-  }, [token]);
-
-  const createSharedCalendar = async () => {
-    const response = await axios.post("/api/store-events", {
-      user_token: { token },
-    });
-    //placeholder, assuming that after the events are stored I'll have some kinda calendar ID to link?
-    const calendarDetails = response.data;
-    if (response.status === 200) {
-      console.log("Response was successful and status code is 200.");
-      console.log("Calendar ID looks like: " + calendarDetails);
-    }
-
-    const newApiResponse = await axios.post("/api/create-shared-calendar", {
-      userToken: { token },
-      calendarDetails,
-    });
   };
 
   const handleBackgroundClick = (e) => {
     e.stopPropagation();
-    onClose(); // This will trigger the close function if clicked anywhere on the background
+    onClose();
   };
 
   const stopPropagation = (e) => {
-    e.stopPropagation(); // Prevents click events inside the modal from propagating to the background
+    e.stopPropagation();
   };
 
   return (
@@ -90,31 +71,40 @@ const CalendarMenuOverlay = ({ onClose }) => {
       onClick={handleBackgroundClick}
     >
       <div
-        className="bg-white bg-opacity-80 p-8 rounded-lg shadow-xl"
+        className="relative bg-white bg-opacity-90 p-6 rounded-xl shadow-2xl w-[500px] max-w-[90%]"
         onClick={stopPropagation}
       >
-        <div className="">
-          <h2 className="card-title">GroupCal Creation</h2>
-          <p>Choose any week and your required time!</p>
-        </div>
-
-        <div className="mb-4 text-center">
-          <p className="text-xl font-semibold text-gray-700">
-            {formattedDateRange}
-          </p>
-        </div>
-        <div>
-          <DatePicker onChange={handleDateChange}></DatePicker>
-        </div>
-        <div>
-          <button onClick={handleFetchEvents}>jason son</button>
-        </div>
         <button
-          className="btn btn-outline btn-ghost opacity-80 btn-circle w-full transition-transform duration-200 hover:scale-95"
+          className="absolute top-3 right-3 btn btn-sm btn-circle btn-ghost hover:bg-gray-100"
           onClick={onClose}
         >
-          Exit
+          ✕
         </button>
+
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            GroupCal Creation
+          </h2>
+          <p className="text-gray-600">
+            Choose your date range and create a shared calendar
+          </p>
+        </div>
+
+        <div className="mb-6 text-center">
+          <p className="text-xl font-semibold text-gray-700 mb-4">
+            {formattedDateRange}
+          </p>
+          <DatePicker
+            onChange={handleDateRangeChange}
+            initialValue={dateRange}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <button className="btn btn-success w-full">
+            Create Shared Calendar
+          </button>
+        </div>
       </div>
     </div>
   );

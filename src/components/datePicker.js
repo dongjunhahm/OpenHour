@@ -1,12 +1,22 @@
 import "cally";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const DatePicker = () => {
-  const [dateRange, setDateRange] = useState("");
+const DatePicker = ({ onDateRangeChange, initialValue = "" }) => {
+  const [dateRange, setDateRange] = useState(initialValue);
+
+  useEffect(() => {
+    //if initial value in parent component changes, local is updated
+    setDateRange(initialValue);
+  }, [initialValue]);
 
   const handleDateChange = (event) => {
     const selectedRange = event.target.value; // formatted in yyyy-mm-dd/yyyy-mm-dd
     setDateRange(selectedRange);
+
+    //notify parent component about local change
+    if (onDateRangeChange) {
+      onDateRangeChange(selectedRange);
+    }
   };
 
   return (
@@ -17,7 +27,7 @@ const DatePicker = () => {
         id="cally1"
         style={{ positionAnchor: "--cally1" }} // Corrected the style prop
       >
-        Pick a date
+        {dateRange ? dateRange : "Pick a date range!"}
       </button>
       <div
         popover
