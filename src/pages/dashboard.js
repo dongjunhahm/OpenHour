@@ -5,7 +5,6 @@ import { useSelector } from "react-redux";
 import React, { useState, useEffect } from "react";
 import EventsList from "../components/eventsList";
 import DatePicker from "../components/datePicker";
-import EventsList from "../components/eventsList";
 import CalendarMenuOverlay from "../components/calendarMenuOverlay";
 
 const Dashboard = () => {
@@ -23,15 +22,25 @@ const Dashboard = () => {
     setShowCalendarMenuOverlay(false);
   };
 
-  const response = axios.post("/api/generate-events-list", {
-    token: token,
-  });
-  console.log("user events list", response.data);
-  const eventsList = response.data.gptResponse;
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = axios.post("/api/generate-events-list", {
+          token: token,
+        });
+        console.log("user events list", response);
+        setEvents(response.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchEvents();
+  }, [token]); //dependency array includes token, so on token change itll refresh
 
   return (
     <div>
-      <EventsList events={eventsList} />
+      <EventsList eventsFound={events} />
       <button className="btn btn-success" onClick={handleOpenOverlay}>
         Create Shared Calendar
       </button>
