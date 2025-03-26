@@ -12,6 +12,19 @@ const CalendarMenuOverlay = ({ onClose }) => {
   const [formattedDateRange, setFormattedDateRange] = useState(
     "Select a date range."
   );
+  const [minDuration, setMinDuration] = useState("");
+  const options = [
+    { value: "1:00:00", label: "1 Hour" },
+    { value: "2:00:00", label: "2 Hours" },
+    { value: "3:00:00", label: "3 Hours" },
+    { value: "4:00:00", label: "4 Hours" },
+    { value: "5:00:00", label: "5 Hours" },
+  ];
+
+  const handleSelectionChange = (value) => {
+    setMinDuration(value);
+    console.log("min duration is:", minDuration, dateRange);
+  };
 
   const handleDateRangeChange = (selectedRange) => {
     setDateRange(selectedRange);
@@ -98,10 +111,14 @@ const CalendarMenuOverlay = ({ onClose }) => {
             onChange={handleDateRangeChange}
             initialValue={dateRange}
           />
+          <SelectionBox options={options} onChange={handleSelectionChange} />
         </div>
 
         <div className="space-y-4">
-          <button className="btn btn-success w-full">
+          <button
+            className="btn btn-success w-full"
+            disabled={dateRange === "" && minDuration === ""}
+          >
             Create Shared Calendar
           </button>
         </div>
@@ -111,3 +128,30 @@ const CalendarMenuOverlay = ({ onClose }) => {
 };
 
 export default CalendarMenuOverlay;
+
+function SelectionBox({ options, onChange }) {
+  const [selectedValue, setSelectedValue] = useState("");
+
+  const handleChange = (event) => {
+    const value = event.target.value;
+    setSelectedValue(value);
+    onChange(value);
+  };
+
+  return (
+    <select
+      className="select select-ghost"
+      value={selectedValue}
+      onChange={handleChange}
+    >
+      <option value="" disabled>
+        choose your duration
+      </option>
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
