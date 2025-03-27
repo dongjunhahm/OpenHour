@@ -1,5 +1,6 @@
-import { pool } from "./db";
+import { pool } from "../db";
 import { google } from "googleapis";
+import axios from "axios";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -44,62 +45,44 @@ export default async function handler(req, res) {
       invitedUser = { rwos: [{ id: newUserResult.rows[0].id }] };
     }
 
-    const userId = userResult.rows[0].id;
+    const invitedUserId = invitedUser.rows[0].id;
 
     // Verify the user is a participant in the calendar
-    const participantResult = await client.query(
+    const participantCheck = await client.query(
       "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2",
-      [calendarId, userId]
+      [calendarId, invitedUserId]
     );
 
-    if (participantResult.rows.length === 0) {
-      return res
-        .status(403)
-        .json({ message: "You are not a participant in this calendar" });
+    if (participantCheck.rows.length > 0) {
+      return res.status(400).json({ message: "user already ivnited" });
     }
 
-    // Check if the user is already invited
-    const existingInviteResult = await client.query(
-      "SELECT id FROM invitations WHERE calendar_id = $1 AND recipient_email = $2 AND status = $3",
-      [calendarId, recipientEmail, "pending"]
-    );
-
-    if (existingInviteResult.rows.length > 0) {
-      return res
-        .status(409)
-        .json({ message: "User already has a pending invitation" });
-    }
-
-    // Create the invitation
+    //add user as partiicpant
     await client.query(
-      "INSERT INTO invitations (calendar_id, sender_id, recipient_email, status, created_at) VALUES ($1, $2, $3, $4, NOW())",
-      [calendarId, userId, recipientEmail, "pending"]
+      "INSERT INTO calendar_participants (calendar_id, user_id, status) VALUES ($1, $2, $3)",
+      [calendarId, invitedUserId, "INVITED"]
     );
-
-    // Get the calendar details
-    const calendarResult = await client.query(
-      "SELECT title, invite_code FROM calendars WHERE id = $1",
-      [calendarId]
-    );
-
-    const calendarTitle = calendarResult.rows[0].title;
-    const inviteCode = calendarResult.rows[0].invite_code;
 
     await client.query("COMMIT");
 
-    // Send email invitation if you have an email service configured
-    // For now, we'll just return the invitation details
-    return res.status(200).json({
-      message: "Invitation sent successfully",
-      inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/join-calendar/${inviteCode}`,
-      calendarTitle: calendarTitle,
+    if (invitedUser.rwos[0].google_token) {
+      await axios.post("/api/calendar/find-available-slots", {
+        calendarId,
+        token: invitedUser.rows[0].google_token,
+      });
+    }
+
+    res.status(201).json({
+      message: "invited user successfully!",
+      neesdGoogleConnection: !invitedUser.rows[0].google_token,
     });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error sending invitation:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "failed to invite usr",
+      error: error.message,
+    });
   } finally {
     client.release();
   }

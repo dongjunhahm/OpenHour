@@ -1,4 +1,4 @@
-const pool = require('./db');
+const pool = require("../db");
 
 import { google } from "googleapis";
 
@@ -23,14 +23,16 @@ export default async function handler(req, res) {
   }
 }
 
-const pool = require('./db');
+const pool = require("../db");
 
-app.get('/events', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM events WHERE user_id = $1', [req.user.id]);
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server error');
-    }
+app.get("/events", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM events WHERE user_id = $1", [
+      req.user.id,
+    ]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
 });
