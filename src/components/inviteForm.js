@@ -14,20 +14,32 @@ const InviteForm = ({ calendarId, onInviteSuccess }) => {
     setMessage({ text: '', type: '' });
     
     try {
-      const response = await axios.post('/api/invite-user', {
+      const response = await axios.post('/api/calendar/invite-user', {
         calendarId,
-        token,
-        recipientEmail
+        inviterToken: token,
+        invitedEmail: recipientEmail
       });
       
+      const inviteUrl = `${window.location.origin}/join-calendar/${calendarId}`;
+      const emailStatus = response.data.emailStatus || 'unknown';
+      const emailService = response.data.emailService || 'default';
+      
+      const messageText = emailStatus === 'sent'
+        ? `Invitation sent to ${recipientEmail}! Share this link: ${inviteUrl}`
+        : `User added but email delivery ${emailStatus}. Share this link: ${inviteUrl}`;
+        
       setMessage({ 
-        text: `Invitation sent! Share this link: ${response.data.inviteUrl}`, 
+        text: messageText, 
         type: 'success' 
       });
       setRecipientEmail('');
       
       if (onInviteSuccess) {
-        onInviteSuccess(response.data);
+        const inviteData = {
+          ...response.data,
+          inviteUrl: `${window.location.origin}/join-calendar/${calendarId}`
+        };
+        onInviteSuccess(inviteData);
       }
     } catch (error) {
       setMessage({ 

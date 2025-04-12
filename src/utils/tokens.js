@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 /**
  * Generate a secure random token for calendar invitations
@@ -8,6 +8,6 @@ const generateInviteToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-module.exports = {
+export {
   generateInviteToken
 };

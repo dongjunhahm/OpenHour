@@ -1,7 +1,12 @@
-const sgMail = require('@sendgrid/mail');
+import sgMail from '@sendgrid/mail';
 
 // Initialize SendGrid with API key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(process.env.SENDGRID_APIKEY || '');
+
+// Check if SendGrid is configured
+const isSendGridConfigured = () => {
+  return !!process.env.SENDGRID_APIKEY;
+};
 
 /**
  * Send an invitation email to a user
@@ -12,9 +17,12 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
  * @returns {Promise} - SendGrid API response
  */
 const sendInvitationEmail = async (to, inviterName, calendarTitle, inviteUrl) => {
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || 'noreply@openhour.app';
+  console.log(`Using from email: ${fromEmail}`);
+  
   const msg = {
     to,
-    from: process.env.SENDGRID_FROM_EMAIL || 'noreply@openhour.app', // Use the verified sender email
+    from: fromEmail,
     subject: `${inviterName} invited you to collaborate on "${calendarTitle}"`,
     text: `
 Hello,
@@ -67,17 +75,92 @@ The OpenHour Team
   };
 
   try {
-    const response = await sgMail.send(msg);
-    return response;
-  } catch (error) {
-    console.error('SendGrid Error:', error);
-    if (error.response) {
-      console.error('Error body:', error.response.body);
+    // Check if SendGrid is configured
+    if (isSendGridConfigured()) {
+      console.log('Using SendGrid for email delivery');
+      // Send using SendGrid
+      const response = await sgMail.send(msg);
+      console.log('Email sent successfully using SendGrid');
+      return { status: 'Sent', mailSent: true };
+    } else {
+      console.log('SendGrid not configured, attempting to use Nodemailer');
+      // Try to use Nodemailer with configured email settings
+      // Import nodemailer dynamically to avoid issues if it's not installed
+      try {
+        // Use dynamic import for nodemailer
+        const nodemailerModule = await import('nodemailer');
+        const nodemailer = nodemailerModule.default;
+        
+        let transporter;
+        
+        // Check if we have email credentials
+        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+          // Use configured credentials
+          transporter = nodemailer.createTransport({
+            host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+            port: parseInt(process.env.EMAIL_PORT || '587'),
+            secure: process.env.EMAIL_SECURE === 'true',
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+            }
+          });
+          
+          console.log(`Nodemailer config: SMTP ${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT}`);
+        } else {
+          // Create a test account on ethereal.email for testing
+          console.log('No email credentials found, creating test account on ethereal.email...');
+          const testAccount = await nodemailer.createTestAccount();
+          
+          // Create a transporter using the test account
+          transporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            auth: {
+              user: testAccount.user,
+              pass: testAccount.pass
+            }
+          });
+          
+          console.log('Created test email account:', testAccount.user);
+        }
+        
+        // Send the email
+        const info = await transporter.sendMail(msg);
+        console.log('Email sent successfully using Nodemailer');
+        
+        // If this is an Ethereal test account, show the preview URL
+        if (info && nodemailer.getTestMessageUrl) {
+          const previewUrl = nodemailer.getTestMessageUrl(info);
+          console.log('Preview URL:', previewUrl);
+          return { 
+            status: 'Sent via Nodemailer', 
+            mailSent: true, 
+            info,
+            previewUrl 
+          };
+        }
+        
+        return { status: 'Sent via Nodemailer', mailSent: true, info };
+      } catch (nodemailerError) {
+        console.error('Nodemailer Error:', nodemailerError);
+        console.warn('Unable to send invitation email: Email service not properly configured');
+        // Just log the error but don't throw so the invitation process can continue
+        return { status: 'Email service not configured', mailSent: false };
+      }
     }
-    throw error;
+  } catch (error) {
+    console.error('Email Service Error:', error);
+    if (error.response) {
+      console.error('Error details:', error.response.body);
+    }
+    // Log the error but don't throw so the invitation process can continue
+    return { status: 'Email sending failed', mailSent: false, error: error.message };
   }
 };
 
-module.exports = {
-  sendInvitationEmail
+export {
+  sendInvitationEmail,
+  isSendGridConfigured
 };

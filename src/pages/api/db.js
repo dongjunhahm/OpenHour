@@ -1,6 +1,5 @@
-import "pg";
-
-const Pool = require("pg").Pool;
+import pg from "pg";
+const { Pool } = pg;
 const pool = new Pool({
   user: process.env.DB_USER || "openhour_admin",
   host: process.env.DB_HOST || "localhost", 
