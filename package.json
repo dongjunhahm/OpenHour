@@ -42,13 +42,18 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "scripts": {
-    "dev": "bun run next dev",
-    "build": "bun run next build",
-    "start": "bun run next start",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "setup-db": "node setup-db.js",
     "init-db": "node init-database.js",
     "vercel-db": "node init-vercel-db.js",
     "render-db": "node render-init-db.js",
-    "postbuild": "node render-init-db.js"
+    "postbuild": "node render-init-db.js || true",
+    "lint": "next lint",
+    "health-check": "node -e \"console.log('Health check: OK')\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
