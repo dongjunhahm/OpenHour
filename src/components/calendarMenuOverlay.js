@@ -134,16 +134,58 @@ const CalendarMenuOverlay = ({ onClose }) => {
 
     if (selectedRange) {
       const [startDate, endDate] = selectedRange.split("/");
+      console.log(
+        "start:",
+        startDate,
+        "end:",
+        endDate,
+        "start type:",
+        typeof startDate,
+        "start length:",
+        startDate.length
+      );
       const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
+        console.log('Formatting date string:', dateString);
+        // Parse the date string and force it to be interpreted as UTC to avoid timezone shift
+        // Then format it in PST/PDT timezone
+        try {
+          // For ISO format dates (YYYY-MM-DD)
+          if (dateString.includes('-')) {
+            const [year, month, day] = dateString.split('-').map(Number);
+            // Create date using UTC to avoid any timezone shifts
+            const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+            console.log('Parsed date object:', date.toString());
+            return new Intl.DateTimeFormat('en-US', {
+              month: 'short',
+              day: 'numeric',
+              timeZone: 'America/Los_Angeles'
+            }).format(date);
+          } 
+          // For other date formats
+          else {
+            // Add T12:00:00Z to ensure it's noon UTC
+            const date = new Date(`${dateString}T12:00:00Z`);
+            console.log('Parsed date object:', date.toString());
+            return new Intl.DateTimeFormat('en-US', {
+              month: 'short',
+              day: 'numeric',
+              timeZone: 'America/Los_Angeles'
+            }).format(date);
+          }
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return dateString; // Return original string if parsing fails
+        }
       };
 
       setFormattedDateRange(
         `${formatDate(startDate)} - ${formatDate(endDate)}`
+      );
+      console.log(
+        "format start:",
+        formatDate(startDate),
+        "format end:",
+        formatDate(endDate)
       );
     } else {
       setFormattedDateRange("Select a date range.");

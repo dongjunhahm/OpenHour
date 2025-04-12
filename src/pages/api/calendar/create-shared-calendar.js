@@ -53,6 +53,19 @@ export default async function handler(req, res) {
       userId = userResult.rows[0].id;
     }
 
+    // Parse dates properly to avoid timezone issues
+    const parseDate = (dateString) => {
+      if (dateString.includes('-')) {
+        // For ISO format dates (YYYY-MM-DD)
+        const [year, month, day] = dateString.split('-').map(Number);
+        // Create date at noon UTC to avoid timezone shifts
+        return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+      } else {
+        // For other date formats, ensure it's parsed as noon UTC
+        return new Date(`${dateString}T12:00:00Z`);
+      }
+    };
+
     // Convert the time format "1:00:00" to minutes (60)
     const minDurationMinutes = parseFloat(minDuration.split(":")[0]);
     
@@ -71,8 +84,8 @@ export default async function handler(req, res) {
         'Shared Calendar', // title
         'Calendar created with OpenHour', // description
         minDurationMinutes, // min_slot_duration in minutes
-        new Date(startDate),
-        new Date(endDate),
+        parseDate(startDate),
+        parseDate(endDate),
         userId
       ]
     );
