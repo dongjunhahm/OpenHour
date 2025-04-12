@@ -75,7 +75,7 @@ export const pool = new SupabasePoolEmulator();
 /**
  * Test the Supabase connection without using direct PostgreSQL
  */
-export async function testConnection() {
+export async function testSupabaseConnection() {
   try {
     // Use the Supabase Data API instead of direct SQL
     const { data, error } = await supabaseAdmin
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await testConnection();
+    const result = await testSupabaseConnection();
     return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ 

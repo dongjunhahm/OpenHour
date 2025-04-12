@@ -154,7 +154,7 @@ export async function testConnection() {
 /**
  * Create an API route handler that uses Supabase
  */
-export function createApiHandler(handlerFunction) {
+export function createSupabaseApiHandler(handlerFunction) {
   return async function handler(req, res) {
     try {
       // Pass the Supabase clients to the handler function

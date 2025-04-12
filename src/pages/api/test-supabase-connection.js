@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin, testConnection } from '../../utils/supabase-client';
+import { supabase, supabaseAdmin, testConnection as testSupabaseConnection } from '../../utils/supabase-client';
 
 /**
  * API route to test Supabase connection without SSL issues
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   try {
     // Test the Supabase connection
-    const result = await testConnection();
+    const result = await testSupabaseConnection();
     
     // Add additional information about the environment
     const environmentInfo = {
