@@ -33,7 +33,9 @@ export default async function handler(req, res) {
     );
 
     if (participantResult.rows.length === 0) {
-      return res.status(403).json({ message: "Not a participant in this calendar" });
+      return res
+        .status(403)
+        .json({ message: "Not a participant in this calendar" });
     }
 
     // Get all participants
@@ -47,11 +49,13 @@ export default async function handler(req, res) {
     );
 
     return res.status(200).json({
-      participants: participantsResult.rows
+      participants: participantsResult.rows,
     });
   } catch (error) {
     console.error("Error getting participants:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   } finally {
     client.release();
   }

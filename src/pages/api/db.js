@@ -1,11 +1,16 @@
 import pg from "pg";
 const { Pool } = pg;
+
+// Determine if we're in production (Vercel) or development (local)
+const isProduction = process.env.VERCEL_ENV === 'production';
+
 const pool = new Pool({
   user: process.env.DB_USER || "openhour_admin",
   host: process.env.DB_HOST || "localhost", 
   database: process.env.DB_NAME || "openhour_database",
   password: process.env.DB_PASSWORD || "Openhour1@2",
   port: process.env.DB_PORT || 5432,
+  ssl: isProduction ? { rejectUnauthorized: false } : false, // Enable SSL in production
 });
 
 // Export the pool for use in other files
