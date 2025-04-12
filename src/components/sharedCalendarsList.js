@@ -32,13 +32,13 @@ const SharedCalendarsList = ({ calendars }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900">
-                    Shared Calendar {calendar.id.substring(0, 8)}
+                    {calendar.title || `Shared Calendar ${String(calendar.id).substring(0, 8)}`}
                   </p>
                   <p className="text-sm text-gray-500">
                     {formatDateRange(calendar.start_date, calendar.end_date)}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Minimum slot: {calendar.min_slot_duration} hours
+                    Minimum slot: {calendar.min_slot_duration ? Math.round(calendar.min_slot_duration / 60) + ' hours' : 'Not specified'}
                   </p>
                 </div>
                 <div className="flex items-center">
