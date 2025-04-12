@@ -9,10 +9,8 @@ const isProduction =
 let poolConfig;
 
 if (isProduction) {
-  // Check for both Render and Vercel PostgreSQL URLs
-  const connectionString = process.env.DATABASE_URL || 
-                          process.env.POSTGRES_URL || 
-                          process.env.POSTGRES_URL_NON_POOLING;
+  // Use Render's DATABASE_URL environment variable
+  const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
     console.error('No database connection string found in environment variables');
