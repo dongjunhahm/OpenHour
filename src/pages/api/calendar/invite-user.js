@@ -1,6 +1,8 @@
 import { pool } from "../db";
 import { google } from "googleapis";
 import axios from "axios";
+import { sendInvitationEmail } from "../../../utils/sendgrid";
+import { generateInviteToken } from "../../../utils/tokens";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
 
     // Verify the user has access to the calendar
     const inviterResult = await client.query(
-      "SELECT id FROM users WHERE google_token = $1",
+      "SELECT id, name, email FROM users WHERE google_token = $1",
       [inviterToken]
     );
 
@@ -24,12 +26,12 @@ export default async function handler(req, res) {
     }
 
     const calendarResult = await client.query(
-      "SELECT * FROM calendars WHERE id = $1",
+      "SELECT id, title, description, start_date, end_date FROM calendars WHERE id = $1",
       [calendarId]
     );
 
     if (calendarResult.rows.length === 0) {
-      return res.status(404).json({ message: "calendar not found " });
+      return res.status(404).json({ message: "Calendar not found" });
     }
 
     let invitedUser = await client.query(
@@ -42,7 +44,7 @@ export default async function handler(req, res) {
         "INSERT INTO users (email, created_at) VALUES ($1, NOW()) RETURNING id",
         [invitedEmail]
       );
-      invitedUser = { rwos: [{ id: newUserResult.rows[0].id }] };
+      invitedUser = { rows: [{ id: newUserResult.rows[0].id }] };
     }
 
     const invitedUserId = invitedUser.rows[0].id;
@@ -54,18 +56,18 @@ export default async function handler(req, res) {
     );
 
     if (participantCheck.rows.length > 0) {
-      return res.status(400).json({ message: "user already ivnited" });
+      return res.status(400).json({ message: "User already invited" });
     }
 
-    //add user as partiicpant
+    //add user as participant
     await client.query(
-      "INSERT INTO calendar_participants (calendar_id, user_id, status) VALUES ($1, $2, $3)",
-      [calendarId, invitedUserId, "INVITED"]
+      "INSERT INTO calendar_participants (calendar_id, user_id) VALUES ($1, $2)",
+      [calendarId, invitedUserId]
     );
 
     await client.query("COMMIT");
 
-    if (invitedUser.rwos[0].google_token) {
+    if (invitedUser.rows[0].google_token) {
       await axios.post("/api/calendar/find-available-slots", {
         calendarId,
         token: invitedUser.rows[0].google_token,
@@ -73,14 +75,14 @@ export default async function handler(req, res) {
     }
 
     res.status(201).json({
-      message: "invited user successfully!",
-      neesdGoogleConnection: !invitedUser.rows[0].google_token,
+      message: "Invited user successfully!",
+      needsGoogleConnection: !invitedUser.rows[0].google_token,
     });
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error sending invitation:", error);
     res.status(500).json({
-      message: "failed to invite usr",
+      message: "Failed to invite user",
       error: error.message,
     });
   } finally {

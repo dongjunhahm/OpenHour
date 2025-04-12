@@ -1,47 +1,49 @@
 import "cally";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const DatePicker = ({ onDateRangeChange, initialValue = "" }) => {
+const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
   const [dateRange, setDateRange] = useState(initialValue);
+  const calendarRef = useRef(null);
 
   useEffect(() => {
-    //if initial value in parent component changes, local is updated
     setDateRange(initialValue);
   }, [initialValue]);
 
-  const handleDateChange = (event) => {
-    const selectedRange = event.target.value; // formatted in yyyy-mm-dd/yyyy-mm-dd
-    setDateRange(selectedRange);
+  useEffect(() => {
+    const calendar = calendarRef.current;
+    if (calendar) {
+      const handleCalendarChange = (event) => {
+        const selectedRange = event.target.value;
+        setDateRange(selectedRange);
+        onDateRangeChange(selectedRange);
+      };
 
-    //notify parent component about local change
-    if (onDateRangeChange) {
-      onDateRangeChange(selectedRange);
+      calendar.addEventListener("change", handleCalendarChange);
+      return () => calendar.removeEventListener("change", handleCalendarChange);
     }
-  };
+  }, [onDateRangeChange]);
 
   return (
     <div>
       <button
-        popoverTarget="cally-popover1"
+        data-popover-target="cally-popover1"
         className="input input-border"
         id="cally1"
-        style={{ positionAnchor: "--cally1" }} // Corrected the style prop
       >
         {dateRange ? dateRange : "Pick a date range!"}
       </button>
       <div
-        popover
-        id="cally-popover1"
+        popoverTarget="cally-popover1"
         className="dropdown bg-base-100 rounded-box shadow-lg"
-        style={{ positionAnchor: "--cally1" }}
+        id="cally1"
       >
         <calendar-range
           class="cally"
+          ref={calendarRef}
           value={dateRange}
           min="2024-01-01"
           max="2024-12-31"
           locale="en-GB"
-          onchange={handleDateChange} // Update the date range on change
         >
           <svg
             aria-label="Previous"

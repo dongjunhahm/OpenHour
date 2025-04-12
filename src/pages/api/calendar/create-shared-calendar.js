@@ -1,6 +1,5 @@
 import axios from "axios";
 import { pool } from "../db";
-import { v4 as uuidv4 } from "uuid";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -8,49 +7,84 @@ export default async function handler(req, res) {
   }
 
   const { token, startDate, endDate, minDuration } = req.body;
+  console.log("Received request with params:", { token, startDate, endDate, minDuration });
+
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
+    // First check if the users table exists
+    const tableCheck = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'users'
+      );
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      throw new Error("Database tables not initialized. Please run the database setup first.");
+    }
+
+    // Continue with the original query
     const userResult = await client.query(
       "SELECT id FROM users WHERE google_token = $1",
       [token]
     );
+    
+    // If user doesn't exist, create a new user
+    let userId;
+    if (userResult.rows.length === 0) {
+      const newUserResult = await client.query(
+        "INSERT INTO users (google_token, created_at) VALUES ($1, NOW()) RETURNING id",
+        [token]
+      );
+      userId = newUserResult.rows[0].id;
+    } else {
+      userId = userResult.rows[0].id;
+    }
 
-    const userId = userResult.rows[0].id;
-    const calendarId = uuidv4();
-
-    await client.query(
-      `INSERT INTO calendars(id, creator_id, start_date, end_date, min_slot_duration, status)
-            VALUES ($1, $2, $3, $4, $5, 'CREATED')`,
+    // Convert the time format "1:00:00" to minutes (60)
+    const minDurationMinutes = parseFloat(minDuration.split(":")[0]) * 60;
+    
+    // Insert into calendars table according to the schema
+    const calendarResult = await client.query(
+      `INSERT INTO calendars(
+        title, 
+        description, 
+        min_slot_duration, 
+        start_date, 
+        end_date, 
+        owner_id, 
+        created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id, invite_code`,
       [
-        calendarId,
-        userId,
+        'Shared Calendar', // title
+        'Calendar created with OpenHour', // description
+        minDurationMinutes, // min_slot_duration in minutes
         new Date(startDate),
         new Date(endDate),
-        parseInt(minDuration.split(":")[0]),
+        userId
       ]
     );
+    
+    const calendarId = calendarResult.rows[0].id;
 
+    // Insert the user as a participant with owner status
     await client.query(
-      `
-            INSERT INTO calendar_participants (calendar_id, user_id)
-            VALUES ($1, $2)
-            `,
+      `INSERT INTO calendar_participants (calendar_id, user_id, is_owner, joined_at)
+       VALUES ($1, $2, true, NOW())`,
       [calendarId, userId]
     );
 
     await client.query("COMMIT");
 
-    await axios.post("/api/find-available-slots", {
-      calendarId,
-      token,
-    });
-
+    // Return successful response with the necessary data
     res.status(201).json({
-      calendarId,
-      message: "calednar created",
+      calendarId: calendarId,
+      inviteCode: calendarResult.rows[0].invite_code,
+      message: "Calendar created successfully"
     });
   } catch (error) {
     await client.query("ROLLBACK");

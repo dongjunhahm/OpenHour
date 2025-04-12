@@ -14,15 +14,22 @@ const CalendarMenuOverlay = ({ onClose }) => {
     "Select a date range."
   );
   const [minDuration, setMinDuration] = useState("");
+  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
   const options = [
-    { value: "1:00:00", label: "1 Hour" },
-    { value: "2:00:00", label: "2 Hours" },
-    { value: "3:00:00", label: "3 Hours" },
-    { value: "4:00:00", label: "4 Hours" },
-    { value: "5:00:00", label: "5 Hours" },
+    { value: "1:00", label: "1 Hour" },
+    { value: "2:00", label: "2 Hours" },
+    { value: "3:00", label: "3 Hours" },
+    { value: "4:00", label: "4 Hours" },
+    { value: "5:00", label: "5 Hours" },
   ];
 
-  const handleCreateSharedCalendar = async () => {
+  const handleCreateSharedCalendar = () => {
+    console.log(
+      "Button clicked with dateRange:",
+      dateRange,
+      "and minDuration:",
+      minDuration
+    );
     if (!dateRange || !minDuration) {
       console.error("need to select both date range and duration");
       return;
@@ -30,21 +37,25 @@ const CalendarMenuOverlay = ({ onClose }) => {
 
     setOverlayState("loading");
 
-    try {
-      const [startDate, endDate] = dateRange.split("/");
+    // Extract dates from range
+    const [startDate, endDate] = dateRange.split("/");
 
-      const response = await axios.post("/api/create-shared-calendar", {
-        token: token,
-        startDate: startDate,
-        endDate: endDate,
-        minDuration: minDuration,
+    // Make the API request
+    axios
+      .post("/api/calendar/create-shared-calendar", {
+        token,
+        startDate,
+        endDate,
+        minDuration,
+      })
+      .then((response) => {
+        console.log("Calendar created successfully:", response.data);
+        router.push(`/shared-calendar/${response.data.calendarId}`);
+      })
+      .catch((error) => {
+        console.error("failed to create shared calendar", error);
+        setOverlayState("error");
       });
-
-      router.push(`/shared-calendar/${response.data.calendarId}`);
-    } catch (error) {
-      console.error("failed to create shared caendar", error);
-      setOverlayState("error");
-    }
   };
 
   const renderOverlayContent = () => {
@@ -66,7 +77,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
                 {formattedDateRange}
               </p>
               <DatePicker
-                onChange={handleDateRangeChange}
+                onDateRangeChange={handleDateRangeChange}
                 initialValue={dateRange}
               />
               <SelectionBox
@@ -78,7 +89,8 @@ const CalendarMenuOverlay = ({ onClose }) => {
             <div className="space-y-4">
               <button
                 className="btn btn-success w-full"
-                disabled={dateRange === "" && minDuration === ""}
+                disabled={!isButtonEnabled}
+                onClick={handleCreateSharedCalendar}
               >
                 Create Shared Calendar
               </button>
@@ -109,12 +121,15 @@ const CalendarMenuOverlay = ({ onClose }) => {
   };
 
   const handleSelectionChange = (value) => {
+    console.log("Selection changed to:", value);
     setMinDuration(value);
-    console.log("min duration is:", minDuration, dateRange);
+    updateButtonState(dateRange, value);
   };
 
   const handleDateRangeChange = (selectedRange) => {
+    console.log("Date range changed to:", selectedRange);
     setDateRange(selectedRange);
+    updateButtonState(selectedRange, minDuration);
 
     if (selectedRange) {
       const [startDate, endDate] = selectedRange.split("/");
@@ -132,6 +147,11 @@ const CalendarMenuOverlay = ({ onClose }) => {
     } else {
       setFormattedDateRange("Select a date range.");
     }
+  };
+
+  const updateButtonState = (range, duration) => {
+    console.log("Updating button state with:", range, duration);
+    setIsButtonEnabled(!!range && !!duration);
   };
 
   const handleFetchEvents = async () => {
@@ -195,7 +215,9 @@ function SelectionBox({ options, onChange }) {
   const handleChange = (event) => {
     const value = event.target.value;
     setSelectedValue(value);
-    onChange(value);
+    if (onChange) {
+      onChange(value);
+    }
   };
 
   return (

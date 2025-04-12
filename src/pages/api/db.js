@@ -2,10 +2,10 @@ import "pg";
 
 const Pool = require("pg").Pool;
 const pool = new Pool({
-  user: process.env.DB_USER || "my_user",
+  user: process.env.DB_USER || "openhour_admin",
   host: process.env.DB_HOST || "localhost", 
-  database: process.env.DB_NAME || "my_database",
-  password: process.env.DB_PASSWORD || "root",
+  database: process.env.DB_NAME || "openhour_database",
+  password: process.env.DB_PASSWORD || "Openhour1@2",
   port: process.env.DB_PORT || 5432,
 });
 
