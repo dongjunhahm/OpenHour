@@ -2,16 +2,63 @@ import pg from "pg";
 const { Pool } = pg;
 
 // Determine if we're in production (Vercel) or development (local)
-const isProduction = process.env.VERCEL_ENV === 'production';
+const isProduction = process.env.VERCEL || process.env.VERCEL_ENV === 'production';
 
-const pool = new Pool({
-  user: process.env.DB_USER || "openhour_admin",
-  host: process.env.DB_HOST || "localhost", 
-  database: process.env.DB_NAME || "openhour_database",
-  password: process.env.DB_PASSWORD || "Openhour1@2",
-  port: process.env.DB_PORT || 5432,
-  ssl: isProduction ? { rejectUnauthorized: false } : false, // Enable SSL in production
-});
+// Configure database connection based on environment
+let poolConfig;
+
+if (isProduction) {
+  // Use Supabase connection URL when in production/Vercel
+  const connectionString = process.env.POSTGRES_URL || 
+                          process.env.POSTGRES_URL_NON_POOLING || 
+                          `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:5432/${process.env.POSTGRES_DATABASE}?sslmode=require`;
+  
+  poolConfig = {
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  };
+  
+  console.log('Using production database connection with:', {
+    usingConnectionString: !!connectionString,
+    usingUrl: connectionString === process.env.POSTGRES_URL,
+    usingNonPooling: connectionString === process.env.POSTGRES_URL_NON_POOLING,
+    usingConstructed: !process.env.POSTGRES_URL && !process.env.POSTGRES_URL_NON_POOLING
+  });
+} else {
+  // Use local connection details for development
+  poolConfig = {
+    user: process.env.DB_USER || "openhour_admin",
+    host: process.env.DB_HOST || "localhost", 
+    database: process.env.DB_NAME || "openhour_database",
+    password: process.env.DB_PASSWORD || "Openhour1@2",
+    port: process.env.DB_PORT || 5432,
+    ssl: false
+  };
+  console.log('Using development database connection');
+}
+
+// Handle any errors during pool creation
+let pool;
+try {
+  pool = new Pool(poolConfig);
+  
+  // Test the connection
+  pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+      console.error('Database connection test failed:', err.message);
+    } else {
+      console.log('Database connection successful, server time:', res.rows[0].now);
+    }
+  });
+} catch (error) {
+  console.error('Failed to create database pool:', error.message);
+  // Create a fallback pool that will throw helpful errors when used
+  pool = {
+    connect: () => Promise.reject(new Error(`Database connection failed: ${error.message}. Check your environment variables.`)),
+    query: () => Promise.reject(new Error(`Database query failed: ${error.message}. Check your environment variables.`)),
+    end: () => Promise.resolve(),
+  };
+}
 
 // Export the pool for use in other files
 export { pool };

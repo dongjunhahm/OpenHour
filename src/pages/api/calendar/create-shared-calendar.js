@@ -1,6 +1,14 @@
 import axios from "axios";
 import { pool } from "../db";
 
+// Log database connection status on startup
+console.log('Database connection environment:', {
+  isVercel: !!process.env.VERCEL,
+  hasPostgresUrl: !!process.env.POSTGRES_URL,
+  hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
+  env: process.env.NODE_ENV
+});
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
@@ -87,13 +95,49 @@ export default async function handler(req, res) {
       message: "Calendar created successfully"
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("calendar creation error:", error);
-    res.status(500).json({
-      message: "failed to create calendar",
-      error: error.message,
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Rollback failed:", rollbackError.message);
+    }
+    
+    // Detailed error logging
+    console.error("Calendar creation error:", {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      query: error.query,
+      detail: error.detail,
+      isConnectionError: error.message.includes('ECONNREFUSED')
     });
+    
+    // Return more helpful error message based on error type
+    if (error.message.includes('ECONNREFUSED')) {
+      res.status(500).json({
+        message: "Database connection failed. Check Vercel environment variables.",
+        error: error.message,
+        suggestion: "Verify that POSTGRES_URL or related environment variables are set correctly in Vercel."
+      });
+    } else if (error.code === '42P01') { // Relation does not exist
+      res.status(500).json({
+        message: "Database tables not created yet.",
+        error: error.message,
+        suggestion: "Database schema needs to be initialized."
+      });
+    } else {
+      res.status(500).json({
+        message: "Failed to create calendar",
+        error: error.message,
+      });
+    }
   } finally {
-    client.release();
+    // Safely release the client back to the pool
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error("Error releasing client:", releaseError.message);
+      }
+    }
   }
 }

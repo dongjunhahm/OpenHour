@@ -2,6 +2,14 @@ import { pool } from "../db";
 import { query } from "pg";
 import "../setupDb"; // Import the setupDb file to ensure database is initialized
 
+// Log database connection info on startup
+console.log('get-user-calendars: Database connection environment:', {
+  isVercel: !!process.env.VERCEL,
+  hasPostgresUrl: !!process.env.POSTGRES_URL,
+  hasSupabaseUrl: !!process.env.SUPABASE_URL,
+  env: process.env.NODE_ENV
+});
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
@@ -92,20 +100,48 @@ export default async function handler(req, res) {
       name: error.name,
       message: error.message,
       stack: error.stack,
-      query: error.query
+      query: error.query,
+      code: error.code,
+      detail: error.detail,
+      isConnectionError: error.message.includes('ECONNREFUSED')
     });
 
+    // Handle different types of errors with helpful messages
+    if (error.message.includes('ECONNREFUSED')) {
+      return res.status(500).json({ 
+        message: "Database connection failed. Check Vercel environment variables.", 
+        error: error.message,
+        suggestion: "Verify that POSTGRES_URL or related environment variables are correctly set in Vercel."
+      });
+    }
     // Special handling for missing tables
-    if (error.message.includes('relation') && error.message.includes('does not exist')) {
+    else if (error.message.includes('relation') && error.message.includes('does not exist')) {
       // Return empty result instead of error if tables don't exist yet
       return res.status(200).json({
         calendars: [],
         notice: "Database is being set up, please try again in a moment"
       });
     }
-
-    return res.status(500).json({ message: "Server error", error: error.message });
+    // Generic database errors
+    else if (error.code && error.code.startsWith('42')) {
+      return res.status(500).json({ 
+        message: "Database schema error", 
+        error: error.message,
+        suggestion: "The database schema may need to be initialized or updated."
+      });
+    }
+    // Default error handler
+    else {
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
   } finally {
-    client.release();
+    // Safely release the client back to the pool
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error("Error releasing client:", releaseError.message);
+      }
+    }
   }
 }

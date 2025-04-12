@@ -46,6 +46,8 @@
     "build": "bun run next build",
     "start": "bun run next start",
     "setup-db": "node setup-db.js",
-    "init-db": "node init-database.js"
+    "init-db": "node init-database.js",
+    "vercel-db": "node init-vercel-db.js",
+    "postbuild": "node init-vercel-db.js"
   }
 }
