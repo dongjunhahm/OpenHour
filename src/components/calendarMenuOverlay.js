@@ -51,6 +51,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
       .then((response) => {
         console.log("Calendar created successfully:", response.data);
         router.push(`/shared-calendar/${response.data.calendarId}`);
+        console.log(minDuration);
       })
       .catch((error) => {
         console.error("failed to create shared calendar", error);

@@ -50,12 +50,12 @@ export default async function handler(req, res) {
     );
 
     if (calendarResult.rows.length === 0) {
-      return res.status(404).json({ message: "calenar not found" });
+      return res.status(404).json({ message: "calendar not found" });
     }
 
     const { min_slot_duration, start_date, end_date } = calendarResult.rows[0];
 
-    //get all participants in teh claendar
+    //get all participants in the claendar
     const participantsResult = await client.query(
       `SELECT u.id, u.google_token
             FROM calendar_participants cp

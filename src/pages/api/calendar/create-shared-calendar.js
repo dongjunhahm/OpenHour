@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
 
     // Convert the time format "1:00:00" to minutes (60)
-    const minDurationMinutes = parseFloat(minDuration.split(":")[0]) * 60;
+    const minDurationMinutes = parseFloat(minDuration.split(":")[0]);
     
     // Insert into calendars table according to the schema
     const calendarResult = await client.query(
