@@ -11,14 +11,13 @@ echo "Starting OpenHour application at $(date)"
 echo "Node version: $(node -v)"
 echo "NPM version: $(npm -v)"
 
-# Ensure database initialization script exists
-if [ -f "./render-init-db.js" ]; then
-  # Run the database initialization (non-blocking)
-  echo "Initializing database in the background..."
-  node render-init-db.js &
-else
-  echo "Warning: Database initialization script not found"
-fi
+# Run database initialization and wait for it to complete
+echo "Initializing database..."
+node render-init-db.js
+
+# Wait a moment to ensure database connections are established
+echo "Waiting for database connections to stabilize..."
+sleep 5
 
 # Start the Next.js application
 echo "Starting Next.js application..."

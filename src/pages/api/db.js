@@ -1,16 +1,18 @@
 import pg from "pg";
 const { Pool } = pg;
 
-// Determine if we're in production (Vercel) or development (local)
+// Determine if we're in production (Vercel or Render) or development (local)
 const isProduction =
-  process.env.VERCEL || process.env.VERCEL_ENV === "production";
+  process.env.VERCEL || process.env.VERCEL_ENV === "production" || process.env.RENDER;
 
 // Configure database connection based on environment
 let poolConfig;
 
 if (isProduction) {
   // Check for both Render and Vercel PostgreSQL URLs
-  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
+  const connectionString = process.env.DATABASE_URL || 
+                          process.env.POSTGRES_URL || 
+                          process.env.POSTGRES_URL_NON_POOLING;
 
   if (!connectionString) {
     console.error('No database connection string found in environment variables');
@@ -23,6 +25,10 @@ if (isProduction) {
     ssl: {
       rejectUnauthorized: false, // Required for Render/Vercel managed PostgreSQL
     },
+    // Add connection pool settings for better stability
+    max: 20, // Maximum number of clients the pool should contain
+    idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
+    connectionTimeoutMillis: 2000, // How long to wait for a connection to become available
   };
 
   console.log("Using production database with connection string");
@@ -43,6 +49,11 @@ if (isProduction) {
 let pool;
 try {
   pool = new Pool(poolConfig);
+
+  // Add error handler to prevent crashes from lost connections
+  pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+  });
 
   // Test the connection
   pool.query("SELECT NOW()", (err, res) => {
