@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     res.status(201).json({
       calendarId,
-      message: "calednar created",
+      message: "calendar created",
     });
   } catch (error) {
     await client.query("ROLLBACK");

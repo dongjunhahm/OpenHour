@@ -24,7 +24,7 @@ const EventsList = ({ eventsFound = [] }) => {
     .slice(0, 10);
 
   return (
-    <ul className="list bg-base-100 rounded-box shadow-md">
+    <ul className="list bg-base-100 rounded-box shadow-md w-full">
       <li className="p-4 pb-2 text-xs opacity-60 tracking-wide">
         Upcoming Events
       </li>
@@ -34,9 +34,9 @@ const EventsList = ({ eventsFound = [] }) => {
             key={event.id}
             className="list-row p-4 flex items-center justify-between"
           >
-            <div className="flex items-center w-full">
+            <div className="flex items-center w-full gap-2">
               {/* Event Title on the Left */}
-              <div className="w-1/3 pr-4 truncate">
+              <div className="flex-shrink-0 w-1/3 pr-4 truncate">
                 <h3 className="font-bold text-lg">
                   {event.summary || "Untitled Event"}
                 </h3>

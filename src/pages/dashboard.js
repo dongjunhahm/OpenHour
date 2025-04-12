@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [dateRange, setDateRange] = useState("");
   const [events, setEvents] = useState([]);
   const [showCalendarMenuOverlay, setShowCalendarMenuOverlay] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const handleOpenOverlay = () => {
     setShowCalendarMenuOverlay(true);
@@ -50,21 +50,21 @@ const Dashboard = () => {
 
   return (
     <div>
-      <Navbar></Navbar>
+      <Navbar toggleSidebar={toggleSidebar} />
       <div className="flex">
         {/* Sidebar */}
-        <div></div>
         <div
           className={`
-        w-80 bg-base-200 min-h-screen p-4 
+        w-80 bg-base-200 min-h-screen p-4 pt-20 lg:pt-4
         transform transition-transform duration-300 
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        fixed top-0 left-0 z-50 lg:relative lg:translate-x-0
+        fixed top-0 left-0 z-20 lg:relative lg:z-0
+        shadow-lg
       `}
         >
           <button
             onClick={toggleSidebar}
-            className="lg:hidden absolute top-4 right-4"
+            className="lg:hidden absolute top-4 right-4 text-xl font-bold"
           >
             ✕
           </button>
@@ -79,14 +79,8 @@ const Dashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-grow p-4">
-          {/* Mobile Sidebar Toggle */}
-          <button
-            onClick={toggleSidebar}
-            className="btn btn-primary lg:hidden mb-4"
-          >
-            Open Sidebar
-          </button>
+        <div className={`flex-grow p-4 ${isSidebarOpen ? "lg:ml-80" : "ml-0"} transition-all duration-300 w-full`}>
+          {/* Sidebar toggle button is now in Navbar */}
           <button className="btn btn-success mb-4" onClick={handleOpenOverlay}>
             Create Shared Calendar
           </button>
@@ -100,7 +94,7 @@ const Dashboard = () => {
         {/* Sidebar Overlay for Mobile */}
         {isSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-10 lg:hidden"
             onClick={toggleSidebar}
           />
         )}
