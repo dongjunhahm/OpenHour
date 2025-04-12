@@ -9,12 +9,19 @@ const isProduction =
 let poolConfig;
 
 if (isProduction) {
-  const connectionString = process.env.DATABASE_URL;
+  // Check for both Render and Vercel PostgreSQL URLs
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING;
+
+  if (!connectionString) {
+    console.error('No database connection string found in environment variables');
+  } else {
+    console.log('Connection string found:', connectionString ? 'Available' : 'Not available');
+  }
 
   poolConfig = {
     connectionString,
     ssl: {
-      rejectUnauthorized: false, // Required for Render's managed PostgreSQL
+      rejectUnauthorized: false, // Required for Render/Vercel managed PostgreSQL
     },
   };
 

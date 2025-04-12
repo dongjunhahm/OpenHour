@@ -108,8 +108,31 @@ export async function setupDatabase() {
 }
 
 // Initialize the database immediately when this module is imported
-setupDatabase().catch((error) => {
-  console.error("Failed to initialize database schema:", error);
+// Use an IIFE with retry mechanism for database initialization
+(async function initDbWithRetry(maxRetries = 3, delay = 3000) {
+  let attempts = 0;
+  
+  while (attempts < maxRetries) {
+    try {
+      console.log(`Attempt ${attempts + 1} to initialize database schema...`);
+      await setupDatabase();
+      console.log(`Database schema successfully initialized on attempt ${attempts + 1}`);
+      return;
+    } catch (error) {
+      attempts++;
+      console.error(`Failed to initialize database schema (attempt ${attempts}/${maxRetries}):`, error);
+      
+      if (attempts >= maxRetries) {
+        console.error(`Max retries (${maxRetries}) reached. Database initialization failed.`);
+        break;
+      }
+      
+      console.log(`Waiting ${delay}ms before retrying...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+})().catch(error => {
+  console.error("Unhandled error in database initialization:", error);
 });
 
 // API route handler to manually set up the database

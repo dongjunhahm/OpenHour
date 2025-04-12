@@ -48,6 +48,7 @@
     "setup-db": "node setup-db.js",
     "init-db": "node init-database.js",
     "vercel-db": "node init-vercel-db.js",
-    "postbuild": "node init-vercel-db.js"
+    "render-db": "node render-init-db.js",
+    "postbuild": "node render-init-db.js"
   }
 }
