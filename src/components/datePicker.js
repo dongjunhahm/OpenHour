@@ -1,4 +1,6 @@
 import "cally";
+import next from "next";
+import { max } from "pg/lib/defaults";
 import { useState, useEffect, useRef } from "react";
 
 const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
@@ -23,6 +25,15 @@ const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
     }
   }, [onDateRangeChange]);
 
+  const currDate = new Date();
+  const currYear = currDate.getFullYear();
+  const nextYear = currYear + 1;
+  const nextDate = currDate.setFullYear(nextYear);
+
+  const minDate = currDate.toString();
+  const maxDate = nextDate.toString();
+
+
   return (
     <div>
       <button
@@ -41,8 +52,8 @@ const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
           class="cally"
           ref={calendarRef}
           value={dateRange}
-          min="2024-01-01"
-          max="2024-12-31"
+          min={minDate}
+          max={maxDate}
           locale="en-GB"
         >
           <svg
