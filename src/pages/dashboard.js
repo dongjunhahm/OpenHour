@@ -1,5 +1,3 @@
-"use client";
-
 // External imports
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -50,7 +48,7 @@ const Dashboard = () => {
         setEvents(eventsResponse.data);
 
         // Fetch user's shared calendars
-        console.log('Fetching calendars with token:', token);
+        console.log("Fetching calendars with token:", token);
         try {
           const calendarsResponse = await axios.get(
             `/api/calendar/get-user-calendars?token=${token}`
