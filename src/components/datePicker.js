@@ -1,15 +1,28 @@
-import "cally";
-import { useState, useEffect, useRef } from "react";
+"use client";
 
+import { useState, useEffect, useRef } from "react";
+import dynamic from 'next/dynamic';
+
+// Import cally only on client-side
 const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
   const [dateRange, setDateRange] = useState(initialValue);
   const calendarRef = useRef(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // This will only run on client-side
+    setIsClient(true);
+    // Import cally library dynamically only on client-side
+    import("cally");
+  }, []);
 
   useEffect(() => {
     setDateRange(initialValue);
   }, [initialValue]);
 
   useEffect(() => {
+    if (!isClient) return;
+    
     const calendar = calendarRef.current;
     if (calendar) {
       const handleCalendarChange = (event) => {
@@ -21,7 +34,11 @@ const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
       calendar.addEventListener("change", handleCalendarChange);
       return () => calendar.removeEventListener("change", handleCalendarChange);
     }
-  }, [onDateRangeChange]);
+  }, [onDateRangeChange, isClient]);
+
+  if (!isClient) {
+    return <div className="input input-border">Loading date picker...</div>;
+  }
 
   return (
     <div>
@@ -70,4 +87,5 @@ const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
   );
 };
 
-export default DatePicker;
+// Use dynamic import with ssr: false to prevent server-side rendering of this component
+export default dynamic(() => Promise.resolve(DatePicker), { ssr: false });

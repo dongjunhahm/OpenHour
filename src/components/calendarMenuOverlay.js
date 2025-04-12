@@ -1,8 +1,13 @@
+"use client";
+
 import { useRouter } from "next/router";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import React, { useState } from "react";
-import DatePicker from "../components/datePicker";
+import dynamic from 'next/dynamic';
+
+// Dynamically import DatePicker with client-side only rendering
+const DatePicker = dynamic(() => import("../components/datePicker"), { ssr: false });
 
 const CalendarMenuOverlay = ({ onClose }) => {
   const router = useRouter();
