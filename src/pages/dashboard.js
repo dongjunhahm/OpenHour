@@ -3,12 +3,21 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import { useSelector } from "react-redux";
+import dynamic from 'next/dynamic';
+
+// For safety - ensure we're never using document on the server side
+const isBrowser = typeof window !== 'undefined';
 
 // Component imports
 import Navbar from "../components/navbar";
 import EventsList from "../components/eventsList";
-import CalendarMenuOverlay from "../components/calendarMenuOverlay";
 import SharedCalendarsList from "../components/sharedCalendarsList";
+
+// Dynamically import components that use browser APIs
+const CalendarMenuOverlay = dynamic(
+  () => import("../components/calendarMenuOverlay"),
+  { ssr: false }
+);
 
 const Dashboard = () => {
   const router = useRouter();

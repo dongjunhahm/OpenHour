@@ -1,9 +1,13 @@
-import "cally";
-import next from "next";
-import { max } from "pg/lib/defaults";
 import { useState, useEffect, useRef } from "react";
+import dynamic from 'next/dynamic';
 
-const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
+// Dynamically import cally with no SSR
+if (typeof window !== 'undefined') {
+  import("cally");
+}
+
+// Create a client-side only version of DatePicker
+const DatePickerComponent = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
   const [dateRange, setDateRange] = useState(initialValue);
   const calendarRef = useRef(null);
 
@@ -80,5 +84,10 @@ const DatePicker = ({ onDateRangeChange = () => {}, initialValue = "" }) => {
     </div>
   );
 };
+
+// Create a client-side only version with no SSR
+const DatePicker = dynamic(() => Promise.resolve(DatePickerComponent), {
+  ssr: false
+});
 
 export default DatePicker;
