@@ -1,7 +1,9 @@
 // Script to initialize the Render PostgreSQL database
-const { Pool } = require('pg');
-const fs = require('fs');
-require('dotenv').config({ path: '.env.local' });
+import { Pool } from 'pg';
+import fs from 'fs';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
 
 async function initializeRenderDatabase() {
   // Get connection string from Render environment
