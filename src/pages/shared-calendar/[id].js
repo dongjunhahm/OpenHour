@@ -614,9 +614,9 @@ const SharedCalendarPage = () => {
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
                           Pending
                         </span>
-                      ) : participant.status === "accepted" ? (
+                      ) : participant.status === "active" ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Accepted
+                          Active
                         </span>
                       ) : (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
