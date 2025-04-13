@@ -110,6 +110,7 @@ const CalendarMenuOverlay = ({ onClose }) => {
   const handleDateRangeChange = (selectedRange) => {
     console.log("Date range changed to:", selectedRange);
     setDateRange(selectedRange);
+    updateButtonState(selectedRange);
 
     if (selectedRange) {
       const [startDate, endDate] = selectedRange.split("/");
