@@ -44,9 +44,17 @@ const LoginForm = () => {
       if (result) {
         const { token } = result;
         dispatch(setToken(token));
-        console.log(token);
-        setUserToken(token);
-        
+
+        try {
+          await axios.post("/api/user/update-token", {
+            token,
+            email: result.user.email,
+            name: result.user.displayName,
+          });
+        } catch (tokenError) {
+          console.error("error saving token to db,", tokenError);
+        }
+
         // Redirect to the calendar page if a redirect is set, otherwise to dashboard
         if (redirect_to) {
           router.push(redirect_to);
