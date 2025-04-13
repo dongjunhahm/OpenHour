@@ -1,0 +1,112 @@
+import { pool } from "../db";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  const { slotId, token, splitDateTime } = req.body;
+
+  if (!slotId || !token || !splitDateTime) {
+    return res.status(400).json({ 
+      message: "Missing required parameters", 
+      required: "slotId, token, splitDateTime"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Verify user access
+    const userResult = await client.query(
+      "SELECT id FROM users WHERE google_token = $1",
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // Get the slot to split
+    const slotResult = await client.query(
+      `SELECT calendar_id, start_time, end_time 
+       FROM available_slots
+       WHERE id = $1`,
+      [slotId]
+    );
+
+    if (slotResult.rows.length === 0) {
+      return res.status(404).json({ message: "Slot not found" });
+    }
+
+    const { calendar_id, start_time, end_time } = slotResult.rows[0];
+
+    // Verify calendar participation
+    const participantResult = await client.query(
+      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2",
+      [calendar_id, userId]
+    );
+
+    if (participantResult.rows.length === 0) {
+      return res
+        .status(403)
+        .json({ message: "Not a participant in this calendar" });
+    }
+
+    // Parse the split date time
+    const splitPoint = new Date(splitDateTime);
+    
+    // Validate that split point is between start and end times
+    if (splitPoint <= start_time || splitPoint >= end_time) {
+      return res.status(400).json({ 
+        message: "Split point must be between start and end times of the slot",
+        start: start_time,
+        end: end_time,
+        splitPoint: splitPoint
+      });
+    }
+
+    // Delete the original slot
+    await client.query(
+      "DELETE FROM available_slots WHERE id = $1",
+      [slotId]
+    );
+
+    // Create two new slots
+    await client.query(
+      "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+      [calendar_id, start_time, splitPoint]
+    );
+
+    await client.query(
+      "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+      [calendar_id, splitPoint, end_time]
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      message: "Slot successfully split",
+      firstSlot: {
+        start: start_time,
+        end: splitPoint
+      },
+      secondSlot: {
+        start: splitPoint,
+        end: end_time
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error splitting slot:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  } finally {
+    client.release();
+  }
+}

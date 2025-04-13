@@ -1,0 +1,108 @@
+import { pool } from "../db";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  const { calendarId, token } = req.body;
+
+  if (!calendarId || !token) {
+    return res.status(400).json({ 
+      message: "Missing required parameters", 
+      required: "calendarId, token"
+    });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Verify user access
+    const userResult = await client.query(
+      "SELECT id FROM users WHERE google_token = $1",
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const userId = userResult.rows[0].id;
+
+    // Verify calendar participation
+    const participantResult = await client.query(
+      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2",
+      [calendarId, userId]
+    );
+
+    if (participantResult.rows.length === 0) {
+      return res
+        .status(403)
+        .json({ message: "Not a participant in this calendar" });
+    }
+
+    // Define the dates for April 13th 6pm to April 14th 11:40am
+    const april13_6pm = new Date(2025, 3, 13, 18, 0, 0); // April 13, 2025, 6:00 PM
+    const april14_1140am = new Date(2025, 3, 14, 11, 40, 0); // April 14, 2025, 11:40 AM
+    
+    // Define the split point at midnight
+    const midnight = new Date(2025, 3, 13, 23, 59, 59, 999); // April 13, 2025, 11:59:59.999 PM
+    const nextDayStart = new Date(2025, 3, 14, 0, 0, 0, 0); // April 14, 2025, 12:00:00.000 AM
+
+    // Find the existing slot
+    const slotResult = await client.query(
+      `SELECT id FROM available_slots
+       WHERE calendar_id = $1
+       AND start_time <= $2
+       AND end_time >= $3`,
+      [calendarId, april13_6pm, april14_1140am]
+    );
+
+    // If no matching slot is found, try to create the split slots anyway
+    if (slotResult.rows.length > 0) {
+      // Delete the existing slot
+      const slotId = slotResult.rows[0].id;
+      await client.query(
+        "DELETE FROM available_slots WHERE id = $1",
+        [slotId]
+      );
+    }
+
+    // Create the two new slots
+    // First slot: April 13, 6:00 PM to 11:59:59.999 PM
+    await client.query(
+      "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+      [calendarId, april13_6pm, midnight]
+    );
+
+    // Second slot: April 14, 12:00 AM to 11:40 AM
+    await client.query(
+      "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+      [calendarId, nextDayStart, april14_1140am]
+    );
+
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      message: "Slot successfully split into evening and morning slots",
+      eveningSlot: {
+        start: april13_6pm.toISOString(),
+        end: midnight.toISOString()
+      },
+      morningSlot: {
+        start: nextDayStart.toISOString(),
+        end: april14_1140am.toISOString()
+      }
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error splitting slot:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  } finally {
+    client.release();
+  }
+}
