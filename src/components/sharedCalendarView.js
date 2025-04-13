@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const SharedCalendarView = ({ availableSlots }) => {
+const SharedCalendarView = ({ availableSlots, onDateClick }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
@@ -89,20 +89,28 @@ const SharedCalendarView = ({ availableSlots }) => {
 
   // Function to handle clicking a time slot
   const handleSlotClick = (slot) => {
-    // Convert slot times to ISO strings that work with datetime-local input
-    const startDateTime = new Date(slot.start);
-    const endDateTime = new Date(slot.end);
-    
-    // Format for datetime-local input (YYYY-MM-DDTHH:MM)
-    const formatForInput = (date) => {
-      return date.toISOString().slice(0, 16);
-    };
-    
-    setSelectedSlot(slot);
-    setEventName('');
-    setStartTime(formatForInput(startDateTime));
-    setEndTime(formatForInput(endDateTime));
-    setShowModal(true);
+    // Check if we should use the new overlay or the old modal
+    if (typeof onDateClick === 'function') {
+      // Use the new EventCreationOverlay component
+      const startDateTime = new Date(slot.start);
+      onDateClick(startDateTime);
+    } else {
+      // Use the existing modal behavior
+      // Convert slot times to ISO strings that work with datetime-local input
+      const startDateTime = new Date(slot.start);
+      const endDateTime = new Date(slot.end);
+      
+      // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+      const formatForInput = (date) => {
+        return date.toISOString().slice(0, 16);
+      };
+      
+      setSelectedSlot(slot);
+      setEventName('');
+      setStartTime(formatForInput(startDateTime));
+      setEndTime(formatForInput(endDateTime));
+      setShowModal(true);
+    }
   };
 
   // Function to add event to Google Calendar
@@ -187,7 +195,10 @@ const SharedCalendarView = ({ availableSlots }) => {
                       <span className="mx-2">-</span>
                       <span className="font-medium">{formatTime(slot.end)}</span>
                       
-                      {/* We don't need overnight indicators anymore since slots are auto-split */}
+                      {/* Click to open the event creation overlay */}
+                      {typeof onDateClick === 'function' && (
+                        <span className="ml-2 text-xs text-blue-600">(Click to create event)</span>
+                      )}
                     </div>
                     <div className="flex items-center">
                       <div className="text-sm text-gray-500">

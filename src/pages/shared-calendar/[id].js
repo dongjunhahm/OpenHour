@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Navbar from "../../components/navbar";
 import SharedCalendarView from "../../components/sharedCalendarView";
+import EventCreationOverlay from "../../components/EventCreationOverlay";
 
 const SharedCalendarPage = () => {
   const router = useRouter();
@@ -17,6 +18,8 @@ const SharedCalendarPage = () => {
   const [participants, setParticipants] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [showEventOverlay, setShowEventOverlay] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -273,7 +276,13 @@ const SharedCalendarPage = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Available Time Slots</h2>
               {availableSlots.length > 0 ? (
-                <SharedCalendarView availableSlots={availableSlots} />
+                <SharedCalendarView 
+                  availableSlots={availableSlots} 
+                  onDateClick={(date) => {
+                    setSelectedDate(date);
+                    setShowEventOverlay(true);
+                  }}
+                />
               ) : (
                 <p className="text-gray-600">No available time slots found for this period.</p>
               )}
@@ -327,6 +336,22 @@ const SharedCalendarPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Event Creation Overlay */}
+      {showEventOverlay && selectedDate && (
+        <EventCreationOverlay
+          onClose={() => setShowEventOverlay(false)}
+          selectedDate={selectedDate}
+          calendarId={id}
+          onEventCreated={(eventData) => {
+            console.log('Event created successfully:', eventData);
+            // Show a success notification to the user
+            alert('Event created successfully!');
+            // Refresh available slots after creating an event
+            refreshAvailableSlots();
+          }}
+        />
+      )}
     </div>
   );
 };
