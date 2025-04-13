@@ -19,7 +19,13 @@ const SharedCalendarPage = () => {
   const [inviteEmail, setInviteEmail] = useState("");
 
   useEffect(() => {
-    if (!id || !token) return;
+    if (!id) return;
+    
+    // If no token, redirect to login page
+    if (!token) {
+      router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
+      return;
+    }
     
     const fetchCalendarData = async () => {
       try {

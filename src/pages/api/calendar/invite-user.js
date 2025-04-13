@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       [calendarId, invitedUserId]
     );
 
-    // Generate the invitation URL
+    // Generate the invitation URL - pointing to our join-calendar page
     const inviteUrl = `${
       req.headers.origin || process.env.NEXT_PUBLIC_BASE_URL
     }/join-calendar/${calendarId}`;

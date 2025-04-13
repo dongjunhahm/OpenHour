@@ -6,11 +6,12 @@ import { useDispatch } from "react-redux";
 import { setToken } from "../store/tokenSlice";
 
 const LoginForm = () => {
+  const router = useRouter();
+  const { redirect_to } = router.query;
   const [userToken, setUserToken] = useState("");
   const [user, setUser] = useState(null);
   const [showLoginButton, setShowLoginButton] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -45,7 +46,13 @@ const LoginForm = () => {
         dispatch(setToken(token));
         console.log(token);
         setUserToken(token);
-        router.push("/dashboard");
+        
+        // Redirect to the calendar page if a redirect is set, otherwise to dashboard
+        if (redirect_to) {
+          router.push(redirect_to);
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (error) {
       console.error("Error during Google Sign In:", error);
