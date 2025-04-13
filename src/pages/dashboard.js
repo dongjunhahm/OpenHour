@@ -142,7 +142,15 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold mb-4">
                   Your Shared Calendars
                 </h2>
-                <SharedCalendarsList calendars={sharedCalendars || []} />
+                <SharedCalendarsList 
+                  calendars={sharedCalendars || []} 
+                  onCalendarDeleted={(deletedCalendarId) => {
+                    // Filter out the deleted calendar from the state
+                    setSharedCalendars(prevCalendars => 
+                      prevCalendars.filter(calendar => calendar.id !== deletedCalendarId)
+                    );
+                  }}
+                />
               </div>
 
               <div>
