@@ -105,11 +105,12 @@ export default async function handler(req, res) {
       }
     }
 
-    //finding avaialble slots
+    //finding available slots
 
     const startTime = new Date(start_date);
     const endTime = new Date(end_date);
-    const minDuration = min_slot_duration * 60 * 1000;
+    // Set minDuration to a very small value (1 minute) since we're removing this feature
+    const minDuration = 1 * 60 * 1000;
 
     allEvents.sort((a, b) => a.start - b.start);
 
@@ -120,13 +121,12 @@ export default async function handler(req, res) {
       if (event.start > currentTime) {
         //gap exists
         const gap = event.start - currentTime;
-        if (gap >= minDuration) {
-          availableSlots.push({
-            start: new Date(currentTime),
-            end: new Date(event.start),
-            duration: gap / (60 * 1000),
-          });
-        }
+        // Always add the slot regardless of minimum duration
+        availableSlots.push({
+          start: new Date(currentTime),
+          end: new Date(event.start),
+          duration: gap / (60 * 1000),
+        });
       }
 
       //update current time
@@ -135,16 +135,15 @@ export default async function handler(req, res) {
       }
     }
 
-    //chec, if there is time after teh last event
+    //check if there is time after the last event
     if (currentTime < endTime) {
-      const gap = endTime - currentTime;
-      if (gap >= minDuration) {
-        availableSlots.push({
-          start: new Date(currentTime),
-          end: new Date(endTime),
-          duration: gap / (60 * 1000),
-        });
-      }
+    const gap = endTime - currentTime;
+    // Always add the slot regardless of duration
+    availableSlots.push({
+    start: new Date(currentTime),
+    end: new Date(endTime),
+    duration: gap / (60 * 1000),
+    });
     }
 
     //storing availbale slots in teh database

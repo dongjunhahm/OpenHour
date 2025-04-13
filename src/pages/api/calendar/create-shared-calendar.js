@@ -15,7 +15,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { token, startDate, endDate, minDuration } = req.body;
+  const { token, startDate, endDate } = req.body;
+  // Setting default minDuration to 0 since we're removing the feature
   console.log("Received request with params:", { token, startDate, endDate, minDuration });
 
   const client = await pool.connect();
@@ -99,8 +100,8 @@ export default async function handler(req, res) {
       return date;
     };
 
-    // Convert the time format "1:00:00" to minutes (60)
-    const minDurationMinutes = parseFloat(minDuration.split(":")[0]);
+    // Set minimum duration to 0 minutes (removing the feature)
+    const minDurationMinutes = 0;
     
     // Insert into calendars table according to the schema
     const calendarResult = await client.query(

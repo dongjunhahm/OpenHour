@@ -265,7 +265,6 @@ const SharedCalendarPage = () => {
           <p className="text-gray-600">
             {new Date(calendarData.start_date).toLocaleDateString()} - {new Date(calendarData.end_date).toLocaleDateString()}
           </p>
-          <p className="text-gray-600">Minimum slot duration: {calendarData.min_slot_duration} hours</p>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

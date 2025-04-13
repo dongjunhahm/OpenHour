@@ -13,25 +13,12 @@ const CalendarMenuOverlay = ({ onClose }) => {
   const [formattedDateRange, setFormattedDateRange] = useState(
     "Select a date range."
   );
-  const [minDuration, setMinDuration] = useState("");
   const [isButtonEnabled, setIsButtonEnabled] = useState(false);
-  const options = [
-    { value: "1:00", label: "1 Hour" },
-    { value: "2:00", label: "2 Hours" },
-    { value: "3:00", label: "3 Hours" },
-    { value: "4:00", label: "4 Hours" },
-    { value: "5:00", label: "5 Hours" },
-  ];
 
   const handleCreateSharedCalendar = () => {
-    console.log(
-      "Button clicked with dateRange:",
-      dateRange,
-      "and minDuration:",
-      minDuration
-    );
-    if (!dateRange || !minDuration) {
-      console.error("need to select both date range and duration");
+    console.log("Button clicked with dateRange:", dateRange);
+    if (!dateRange) {
+      console.error("need to select date range");
       return;
     }
 
@@ -46,12 +33,10 @@ const CalendarMenuOverlay = ({ onClose }) => {
         token,
         startDate,
         endDate,
-        minDuration,
       })
       .then((response) => {
         console.log("Calendar created successfully:", response.data);
         router.push(`/shared-calendar/${response.data.calendarId}`);
-        console.log(minDuration);
       })
       .catch((error) => {
         console.error("failed to create shared calendar", error);
@@ -80,10 +65,6 @@ const CalendarMenuOverlay = ({ onClose }) => {
               <DatePicker
                 onDateRangeChange={handleDateRangeChange}
                 initialValue={dateRange}
-              />
-              <SelectionBox
-                options={options}
-                onChange={handleSelectionChange}
               />
             </div>
 
@@ -123,14 +104,12 @@ const CalendarMenuOverlay = ({ onClose }) => {
 
   const handleSelectionChange = (value) => {
     console.log("Selection changed to:", value);
-    setMinDuration(value);
     updateButtonState(dateRange, value);
   };
 
   const handleDateRangeChange = (selectedRange) => {
     console.log("Date range changed to:", selectedRange);
     setDateRange(selectedRange);
-    updateButtonState(selectedRange, minDuration);
 
     if (selectedRange) {
       const [startDate, endDate] = selectedRange.split("/");
@@ -145,15 +124,15 @@ const CalendarMenuOverlay = ({ onClose }) => {
         startDate.length
       );
       const formatDate = (dateString) => {
-        console.log('Formatting date string:', dateString);
+        console.log("Formatting date string:", dateString);
         try {
           // For display purposes only - formatted as Month Day in PST/PDT
           // This is only for UI display and doesn't affect the actual date values sent to APIs
           let date;
-          
+
           // For ISO format dates (YYYY-MM-DD)
-          if (dateString.includes('-')) {
-            const [year, month, day] = dateString.split('-').map(Number);
+          if (dateString.includes("-")) {
+            const [year, month, day] = dateString.split("-").map(Number);
             // Create date object at 00:00 PST/PDT
             // Using PST offset (-8 hours from UTC)
             date = new Date(year, month - 1, day, 0, 0, 0);
@@ -163,16 +142,16 @@ const CalendarMenuOverlay = ({ onClose }) => {
             // Reset time to midnight in PST/PDT
             date.setHours(0, 0, 0, 0);
           }
-          
-          console.log('Parsed date object:', date.toString());
-          
+
+          console.log("Parsed date object:", date.toString());
+
           // Format for display only
-          return new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric'
+          return new Intl.DateTimeFormat("en-US", {
+            month: "short",
+            day: "numeric",
           }).format(date);
         } catch (error) {
-          console.error('Error formatting date:', error);
+          console.error("Error formatting date:", error);
           return dateString; // Return original string if parsing fails
         }
       };
@@ -191,9 +170,9 @@ const CalendarMenuOverlay = ({ onClose }) => {
     }
   };
 
-  const updateButtonState = (range, duration) => {
-    console.log("Updating button state with:", range, duration);
-    setIsButtonEnabled(!!range && !!duration);
+  const updateButtonState = (range) => {
+    console.log("Updating button state with:", range);
+    setIsButtonEnabled(!!range);
   };
 
   const handleFetchEvents = async () => {
@@ -250,32 +229,3 @@ const CalendarMenuOverlay = ({ onClose }) => {
 };
 
 export default CalendarMenuOverlay;
-
-function SelectionBox({ options, onChange }) {
-  const [selectedValue, setSelectedValue] = useState("");
-
-  const handleChange = (event) => {
-    const value = event.target.value;
-    setSelectedValue(value);
-    if (onChange) {
-      onChange(value);
-    }
-  };
-
-  return (
-    <select
-      className="select select-ghost"
-      value={selectedValue}
-      onChange={handleChange}
-    >
-      <option value="" disabled>
-        choose your duration
-      </option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-}

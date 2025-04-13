@@ -1,9 +1,10 @@
 import React from 'react';
 
 const SharedCalendarView = ({ availableSlots }) => {
-  // Group slots by day
+  // Group slots by day properly
   const slotsByDay = availableSlots.reduce((acc, slot) => {
     const date = new Date(slot.start);
+    // Get the date portion only (YYYY-MM-DD)
     const dayKey = date.toISOString().split('T')[0];
     
     if (!acc[dayKey]) {
@@ -20,12 +21,9 @@ const SharedCalendarView = ({ availableSlots }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Format date function with optional day offset
-  const formatDate = (dateString, dayOffset = 0) => {
+  // Format date function - removed day offset to fix the display issue
+  const formatDate = (dateString) => {
     const date = new Date(dateString);
-    if (dayOffset !== 0) {
-      date.setDate(date.getDate() + dayOffset);
-    }
     return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
   };
 
@@ -35,7 +33,7 @@ const SharedCalendarView = ({ availableSlots }) => {
         Object.keys(slotsByDay).sort().map(day => (
           <div key={day} className="border rounded-lg overflow-hidden">
             <div className="bg-gray-100 px-4 py-2 font-medium">
-              {formatDate(day, 1)} {/* Adding 1 day offset here */}
+              {formatDate(day)} {/* Removed day offset to display the correct date */}
             </div>
             <ul className="divide-y divide-gray-200">
               {slotsByDay[day].map((slot, index) => (
