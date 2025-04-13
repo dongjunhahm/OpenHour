@@ -21,32 +21,74 @@ const SharedCalendarPage = () => {
   useEffect(() => {
     if (!id) return;
     
-    // If no token, redirect to login page
-    if (!token) {
-      router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
-      return;
+    // Get token from Redux or localStorage
+    let currentToken = token;
+    if (!currentToken) {
+      // Fallback to localStorage if Redux token is not available
+      currentToken = localStorage.getItem('auth_token');
+      console.log('Using token from localStorage as fallback');
+      
+      // If still no token, redirect to login
+      if (!currentToken) {
+        console.log('No token found, redirecting to login');
+        router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
+        return;
+      }
     }
+    
+    // Log token info for debugging
+    console.log("Shared Calendar - token info:", {
+      tokenSource: token ? 'Redux' : 'localStorage',
+      tokenPrefix: currentToken.substring(0, 6) + '...',
+      tokenLength: currentToken.length
+    });
     
     const fetchCalendarData = async () => {
       try {
         setLoading(true);
+        console.log('Starting API requests with token');
+        
+        // Define a helper function to handle API calls with fallback to fetch
+        const apiCall = async (url) => {
+          try {
+            if (typeof axios === 'undefined') {
+              console.log('Axios is not defined, using fetch instead');
+              const response = await fetch(url);
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return { data: await response.json() };
+            } else {
+              return await axios.get(url);
+            }
+          } catch (error) {
+            console.error(`Error calling ${url}:`, error);
+            throw error;
+          }
+        };
         
         // Fetch calendar details
-        const calendarResponse = await axios.get(`/api/calendar/get-calendar?id=${id}&token=${token}`);
+        console.log('Fetching calendar details...');
+        const calendarResponse = await apiCall(`/api/calendar/get-calendar?id=${id}&token=${currentToken}`);
         setCalendarData(calendarResponse.data);
+        console.log('Calendar data received');
         
         // Fetch participants
-        const participantsResponse = await axios.get(`/api/calendar/get-participants?calendarId=${id}&token=${token}`);
+        console.log('Fetching participants...');
+        const participantsResponse = await apiCall(`/api/calendar/get-participants?calendarId=${id}&token=${currentToken}`);
         setParticipants(participantsResponse.data.participants);
+        console.log('Participants data received');
         
         // Fetch available slots
-        const slotsResponse = await axios.get(`/api/calendar/get-available-slots?calendarId=${id}&token=${token}`);
+        console.log('Fetching available slots...');
+        const slotsResponse = await apiCall(`/api/calendar/get-available-slots?calendarId=${id}&token=${currentToken}`);
         setAvailableSlots(slotsResponse.data.availableSlots);
+        console.log('Slots data received');
         
         setLoading(false);
       } catch (err) {
         console.error("Error fetching calendar data:", err);
-        setError("Failed to load calendar data");
+        setError("Failed to load calendar data. Please try logging in again.");
         setLoading(false);
       }
     };
@@ -57,17 +99,53 @@ const SharedCalendarPage = () => {
   const handleInviteUser = async () => {
     if (!inviteEmail) return;
     
+    // Get current token from Redux or localStorage
+    let currentToken = token || localStorage.getItem('auth_token');
+    if (!currentToken) {
+      alert("Not authenticated. Please log in again.");
+      router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
+      return;
+    }
+    
     try {
-      await axios.post("/api/calendar/invite-user", {
-        calendarId: id,
-        invitedEmail: inviteEmail,
-        inviterToken: token
-      });
+      // Use fetch as a fallback if axios is not available
+      if (typeof axios === 'undefined') {
+        const response = await fetch("/api/calendar/invite-user", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            calendarId: id,
+            invitedEmail: inviteEmail,
+            inviterToken: currentToken
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } else {
+        await axios.post("/api/calendar/invite-user", {
+          calendarId: id,
+          invitedEmail: inviteEmail,
+          inviterToken: currentToken
+        });
+      }
       
       setInviteEmail("");
       // Refresh participants list
-      const participantsResponse = await axios.get(`/api/calendar/get-participants?calendarId=${id}&token=${token}`);
-      setParticipants(participantsResponse.data.participants);
+      if (typeof axios === 'undefined') {
+        const response = await fetch(`/api/calendar/get-participants?calendarId=${id}&token=${currentToken}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setParticipants(data.participants);
+      } else {
+        const participantsResponse = await axios.get(`/api/calendar/get-participants?calendarId=${id}&token=${currentToken}`);
+        setParticipants(participantsResponse.data.participants);
+      }
     } catch (err) {
       console.error("Error inviting user:", err);
       alert("Failed to invite user");
@@ -75,20 +153,56 @@ const SharedCalendarPage = () => {
   };
 
   const refreshAvailableSlots = async () => {
+    // Get current token from Redux or localStorage
+    let currentToken = token || localStorage.getItem('auth_token');
+    if (!currentToken) {
+      alert("Not authenticated. Please log in again.");
+      router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
+      return;
+    }
+    
     try {
       setLoading(true);
+      console.log('Refreshing available slots...');
       
       // Recalculate available slots
-      await axios.post("/api/calendar/find-available-slots", {
-        calendarId: id,
-        token
-      });
+      if (typeof axios === 'undefined') {
+        const response = await fetch("/api/calendar/find-available-slots", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            calendarId: id,
+            token: currentToken
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } else {
+        await axios.post("/api/calendar/find-available-slots", {
+          calendarId: id,
+          token: currentToken
+        });
+      }
       
       // Fetch updated available slots
-      const slotsResponse = await axios.get(`/api/calendar/get-available-slots?calendarId=${id}&token=${token}`);
-      setAvailableSlots(slotsResponse.data.availableSlots);
+      if (typeof axios === 'undefined') {
+        const response = await fetch(`/api/calendar/get-available-slots?calendarId=${id}&token=${currentToken}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setAvailableSlots(data.availableSlots);
+      } else {
+        const slotsResponse = await axios.get(`/api/calendar/get-available-slots?calendarId=${id}&token=${currentToken}`);
+        setAvailableSlots(slotsResponse.data.availableSlots);
+      }
       
       setLoading(false);
+      console.log('Slots successfully refreshed');
     } catch (err) {
       console.error("Error refreshing slots:", err);
       setError("Failed to refresh available slots");

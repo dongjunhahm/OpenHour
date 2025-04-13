@@ -26,7 +26,18 @@ export default async function handler(req, res) {
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ message: "Unauthorized" });
+      // If we can't find the user by token, let's try to find by examining token components
+      console.log("Token not found in database, checking if token format is correct");
+      
+      // Check if this is a legitimate Google token format (ya29.)
+      const isGoogleToken = token.startsWith('ya29.');
+      console.log("Is this a Google token format?", isGoogleToken ? "Yes" : "No");
+      
+      return res.status(401).json({ 
+        message: "Unauthorized", 
+        detail: "Token not found in database",
+        tokenFormat: isGoogleToken ? "Google format" : "Unknown format"
+      });
     }
 
     const userId = userResult.rows[0].id;

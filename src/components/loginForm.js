@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { setToken } from "../store/tokenSlice";
+import axios from "axios";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -46,11 +47,37 @@ const LoginForm = () => {
         dispatch(setToken(token));
 
         try {
-          await axios.post("/api/user/update-token", {
-            token,
-            email: result.user.email,
-            name: result.user.displayName,
-          });
+          // Ensure axios is imported and available
+          if (typeof axios === 'undefined') {
+            console.error('Axios is not defined; using fetch instead');
+            // Fallback to fetch if axios is undefined
+            await fetch("/api/user/update-token", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                token,
+                email: result.user.email,
+                name: result.user.displayName,
+              }),
+            });
+          } else {
+            // Use axios if available
+            await axios.post("/api/user/update-token", {
+              token,
+              email: result.user.email,
+              name: result.user.displayName,
+            });
+          }
+          
+          // Log successful token saving for debugging
+          console.log('Token saved successfully');
+          
+          // Store token in localStorage as a backup
+          localStorage.setItem('auth_token', token);
+          console.log('Token also saved to localStorage');
+          
         } catch (tokenError) {
           console.error("error saving token to db,", tokenError);
         }
