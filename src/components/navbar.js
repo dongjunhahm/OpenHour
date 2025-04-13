@@ -17,35 +17,46 @@ const Navbar = () => {
     router.push("/");
   };
 
-  const handleDashboard = () => {
-    router.push("/dashboard");
+  const handleHome = () => {
+    router.push("/");
   };
 
   return (
-    <div className="navbar bg-base-100 shadow-sm">
-      <div className="flex-none">
-      </div>
-      <div className="flex-1">
-        <a className="btn btn-ghost text-xl">OpenHour</a>
-      </div>
-      <div className="flex-none">
-        {isLoggedIn ? (
-          <div className="dropdown dropdown-end">
-            <label tabIndex={0} className="btn btn-ghost">
-              My Account
-            </label>
-            <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-              <li><a onClick={handleDashboard}>Dashboard</a></li>
-              <li><a onClick={handleSignOut}>Sign Out</a></li>
-            </ul>
+    <nav className="fixed top-0 w-full bg-white shadow-sm py-4 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center">
+          {/* Logo */}
+          <div className="flex items-center">
+            <button 
+              className="text-2xl font-bold flex items-center" 
+              onClick={handleHome}
+            >
+              <span className="text-black">Open</span>
+              <span className="text-black">Hour</span>
+            </button>
           </div>
-        ) : (
-          <button className="btn btn-ghost" onClick={handleSignIn}>
-            Sign In
-          </button>
-        )}
+          
+          {/* Sign In Button */}
+          <div>
+            {isLoggedIn ? (
+              <button
+                onClick={handleSignOut}
+                className="bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

@@ -74,9 +74,10 @@ const LoginForm = () => {
           // Log successful token saving for debugging
           console.log('Token saved successfully');
           
-          // Store token in localStorage as a backup
+          // Store token in localStorage as a backup with specific key names
           localStorage.setItem('auth_token', token);
-          console.log('Token also saved to localStorage');
+          localStorage.setItem('googleToken', token);  // This key name is used in EventCreationOverlay
+          console.log('Token also saved to localStorage (both auth_token and googleToken)');
           
         } catch (tokenError) {
           console.error("error saving token to db,", tokenError);
