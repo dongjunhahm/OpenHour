@@ -88,22 +88,22 @@ export default async function handler(req, res) {
       [calendarId, userEmail, "pending"]
     );
 
-    // Check if user is already pending (invited but not accepted)
+    // Check if user is already a participant (but hasn't joined yet - joined_at is NULL)
     const pendingCheckResult = await client.query(
-      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2 AND status = 'pending'",
+      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2 AND joined_at IS NULL",
       [calendarId, userId]
     );
 
     if (pendingCheckResult.rows.length > 0) {
-      // Update existing participant status to accepted
+      // Update existing participant to set joined_at timestamp
       await client.query(
-        "UPDATE calendar_participants SET status = 'accepted', joined_at = NOW() WHERE id = $1",
+        "UPDATE calendar_participants SET joined_at = NOW() WHERE id = $1",
         [pendingCheckResult.rows[0].id]
       );
     } else {
-      // Add user as a new participant with accepted status
+      // Add user as a new participant with joined_at timestamp
       await client.query(
-        "INSERT INTO calendar_participants (calendar_id, user_id, is_owner, joined_at, status) VALUES ($1, $2, false, NOW(), 'accepted')",
+        "INSERT INTO calendar_participants (calendar_id, user_id, is_owner, joined_at) VALUES ($1, $2, false, NOW())",
         [calendarId, userId]
       );
     }

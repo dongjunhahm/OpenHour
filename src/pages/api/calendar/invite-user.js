@@ -79,9 +79,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "User already invited" });
     }
 
-    // Add user as participant (status is now tracked elsewhere)
+    // Add user as participant with NULL joined_at to indicate pending status
     await client.query(
-      "INSERT INTO calendar_participants (calendar_id, user_id) VALUES ($1, $2)",
+      "INSERT INTO calendar_participants (calendar_id, user_id, joined_at) VALUES ($1, $2, NULL)",
       [calendarId, invitedUserId]
     );
 
