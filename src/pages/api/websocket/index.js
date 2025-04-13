@@ -30,13 +30,22 @@ const SocketHandler = (req, res) => {
       if (!activeCalendars.has(calendarId)) {
         activeCalendars.set(calendarId, new Set());
       }
+      const isFirstJoin = !activeCalendars.get(calendarId).has(socket.id);
       activeCalendars.get(calendarId).add(socket.id);
       
-      // Notify others that someone joined
-      socket.to(`calendar-${calendarId}`).emit('userJoined', {
-        count: activeCalendars.get(calendarId).size,
-        isNewUser: true // Flag to indicate this is a new user joining
-      });
+      // Notify others that someone joined, but only if it's a new user (not a reconnection)
+      if (isFirstJoin) {
+        socket.to(`calendar-${calendarId}`).emit('userJoined', {
+          count: activeCalendars.get(calendarId).size,
+          isNewUser: true // Flag to indicate this is a new user joining
+        });
+      } else {
+        // For reconnections, just update the count without triggering a refresh
+        socket.to(`calendar-${calendarId}`).emit('userJoined', {
+          count: activeCalendars.get(calendarId).size,
+          isNewUser: false // Not a new user, just a reconnection
+        });
+      }
     });
     
     // Leave a calendar room

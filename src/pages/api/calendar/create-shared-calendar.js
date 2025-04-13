@@ -115,6 +115,7 @@ export default async function handler(req, res) {
       [
         "Shared Calendar", // title
         "Calendar created with OpenHour", // description
+        30, // min_slot_duration (30 minutes)
         parseStart(startDate),
         parseEnd(endDate),
         userId,

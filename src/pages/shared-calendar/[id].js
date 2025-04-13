@@ -61,7 +61,7 @@ const SharedCalendarPage = () => {
         // Only refresh if the isNewUser flag is true (indicating this is a new join, not an invite)
         if (data.isNewUser) {
           console.log("New user joined, refreshing slots");
-          refreshAvailableSlots(false);
+          refreshAvailableSlots(false, false); // Don't emit update and don't mark as new user
         }
       });
 
@@ -372,7 +372,7 @@ const SharedCalendarPage = () => {
     }
   };
 
-  const refreshAvailableSlots = async (emitUpdate = true, isNewUser = false) => {
+  const refreshAvailableSlots = async (emitUpdate = true, isNewUser = true) => {
     // Get current token from Redux or localStorage
     let currentToken = token || localStorage.getItem("auth_token");
     if (!currentToken) {
