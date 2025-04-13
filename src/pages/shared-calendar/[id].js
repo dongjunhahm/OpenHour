@@ -17,6 +17,9 @@ const SharedCalendarPage = () => {
   const [participants, setParticipants] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [titleUpdateLoading, setTitleUpdateLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -71,6 +74,7 @@ const SharedCalendarPage = () => {
         console.log('Fetching calendar details...');
         const calendarResponse = await apiCall(`/api/calendar/get-calendar?id=${id}&token=${currentToken}`);
         setCalendarData(calendarResponse.data);
+        setNewTitle(calendarResponse.data.title);
         console.log('Calendar data received');
         
         // Fetch participants
@@ -95,6 +99,77 @@ const SharedCalendarPage = () => {
     
     fetchCalendarData();
   }, [id, token]);
+
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleCancel = () => {
+    setIsEditingTitle(false);
+    setNewTitle(calendarData.title); // Reset to original title
+  };
+
+  const handleTitleSave = async () => {
+    if (!newTitle.trim()) {
+      return; // Don't save empty titles
+    }
+
+    // Get current token from Redux or localStorage
+    let currentToken = token || localStorage.getItem('auth_token');
+    if (!currentToken) {
+      alert("Not authenticated. Please log in again.");
+      router.push(`/loginPage?redirect_to=/shared-calendar/${id}`);
+      return;
+    }
+
+    try {
+      setTitleUpdateLoading(true);
+      
+      // Using axios or fetch to update the title
+      if (typeof axios === 'undefined') {
+        const response = await fetch("/api/calendar/update-calendar", {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            calendarId: id,
+            title: newTitle,
+            token: currentToken
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        // Update calendar data with the new title
+        setCalendarData({
+          ...calendarData,
+          title: data.calendar.title
+        });
+      } else {
+        const response = await axios.put("/api/calendar/update-calendar", {
+          calendarId: id,
+          title: newTitle,
+          token: currentToken
+        });
+        
+        // Update calendar data with the new title
+        setCalendarData({
+          ...calendarData,
+          title: response.data.calendar.title
+        });
+      }
+      
+      setIsEditingTitle(false);
+    } catch (err) {
+      console.error("Error updating calendar title:", err);
+      alert("Failed to update calendar title");
+    } finally {
+      setTitleUpdateLoading(false);
+    }
+  };
 
   const handleInviteUser = async () => {
     if (!inviteEmail) return;
@@ -261,7 +336,44 @@ const SharedCalendarPage = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Shared Calendar</h1>
+          {isEditingTitle ? (
+            <div className="flex items-center mb-2">
+              <input
+                type="text"
+                className="input input-bordered text-3xl font-bold text-gray-800 mr-2 py-1"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                autoFocus
+              />
+              <button 
+                className="btn btn-sm btn-success mr-2"
+                onClick={handleTitleSave}
+                disabled={titleUpdateLoading}
+              >
+                {titleUpdateLoading ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : (
+                  'Save'
+                )}
+              </button>
+              <button 
+                className="btn btn-sm btn-outline"
+                onClick={handleTitleCancel}
+                disabled={titleUpdateLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <h1 
+              className="text-3xl font-bold text-gray-800 cursor-pointer hover:text-primary transition-colors"
+              onClick={handleTitleEdit}
+              title="Click to edit calendar title"
+            >
+              {calendarData.title}
+              <span className="ml-2 text-sm text-gray-400"></span>
+            </h1>
+          )}
           <p className="text-gray-600">
             {new Date(calendarData.start_date).toLocaleDateString()} - {new Date(calendarData.end_date).toLocaleDateString()}
           </p>
