@@ -57,11 +57,13 @@ const EventCreationOverlay = ({ onClose, selectedDate, calendarId, onEventCreate
     const eventData = {
       token,
       calendarId,
-      eventName: eventDetails.eventName,
+      eventName: eventDetails.eventName,  // This needs to match what the API expects
       description: eventDetails.description,
       startTime: eventDetails.startTime.toISOString(),
       endTime: eventDetails.endTime.toISOString()
     };
+    
+    console.log('Submitting event data:', eventData);
     
     try {
       const response = await fetch('/api/calendar/add-google-event', {

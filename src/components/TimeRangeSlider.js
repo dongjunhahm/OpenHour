@@ -49,7 +49,9 @@ export default function TimeRangeSlider({ startTime, endTime, onChange }) {
       if (!sliderRef.current || (!isDraggingStart.current && !isDraggingEnd.current)) return;
       
       const rect = sliderRef.current.getBoundingClientRect();
-      const position = ((e.clientX - rect.left) / rect.width);
+      // Handle both mouse and touch events
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const position = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       const minutePosition = Math.round(minTime + position * (maxTime - minTime));
       
       // Ensure value is within bounds
@@ -75,7 +77,7 @@ export default function TimeRangeSlider({ startTime, endTime, onChange }) {
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('touchmove', handleMouseMove, { passive: false });
+    document.addEventListener('touchmove', handleMouseMove, { passive: true });
     document.addEventListener('touchend', handleMouseUp);
     
     return () => {
@@ -131,24 +133,26 @@ export default function TimeRangeSlider({ startTime, endTime, onChange }) {
         ></div>
         
         {/* Start Handle */}
-        <button
-          type="button"
-          className="absolute w-6 h-6 bg-white border-2 border-blue-500 rounded-full shadow focus:outline-none -ml-3 -mt-2"
-          style={{ left: `${startPercent}%`, zIndex: 10 }}
-          onMouseDown={() => { isDraggingStart.current = true; }}
-          onTouchStart={() => { isDraggingStart.current = true; }}
+        <div
+          className="absolute w-6 h-6 bg-white border-2 border-blue-500 rounded-full shadow focus:outline-none transform -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${startPercent}%`, top: '50%', zIndex: 10, cursor: 'grab' }}
+          onMouseDown={(e) => { e.preventDefault(); isDraggingStart.current = true; }}
+          onTouchStart={(e) => { e.preventDefault(); isDraggingStart.current = true; }}
+          role="slider"
           aria-label="Set start time"
-        ></button>
+          aria-valuetext={minutesToTimeString(rangeValues.start)}
+        ></div>
         
         {/* End Handle */}
-        <button
-          type="button"
-          className="absolute w-6 h-6 bg-white border-2 border-blue-500 rounded-full shadow focus:outline-none -ml-3 -mt-2"
-          style={{ left: `${endPercent}%`, zIndex: 10 }}
-          onMouseDown={() => { isDraggingEnd.current = true; }}
-          onTouchStart={() => { isDraggingEnd.current = true; }}
+        <div
+          className="absolute w-6 h-6 bg-white border-2 border-blue-500 rounded-full shadow focus:outline-none transform -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${endPercent}%`, top: '50%', zIndex: 10, cursor: 'grab' }}
+          onMouseDown={(e) => { e.preventDefault(); isDraggingEnd.current = true; }}
+          onTouchStart={(e) => { e.preventDefault(); isDraggingEnd.current = true; }}
+          role="slider"
           aria-label="Set end time"
-        ></button>
+          aria-valuetext={minutesToTimeString(rangeValues.end)}
+        ></div>
       </div>
       
       {/* Min/Max Labels */}
