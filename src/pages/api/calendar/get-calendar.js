@@ -12,7 +12,9 @@ export default async function handler(req, res) {
   }
 
   const client = await pool.connect();
-
+  //plcaeholder
+  //fefe
+  //efefef
   try {
     // Verify user access
     console.log("attempting to verify user with token", token);
@@ -27,16 +29,21 @@ export default async function handler(req, res) {
 
     if (userResult.rows.length === 0) {
       // If we can't find the user by token, let's try to find by examining token components
-      console.log("Token not found in database, checking if token format is correct");
-      
+      console.log(
+        "Token not found in database, checking if token format is correct"
+      );
+
       // Check if this is a legitimate Google token format (ya29.)
-      const isGoogleToken = token.startsWith('ya29.');
-      console.log("Is this a Google token format?", isGoogleToken ? "Yes" : "No");
-      
-      return res.status(401).json({ 
-        message: "Unauthorized", 
+      const isGoogleToken = token.startsWith("ya29.");
+      console.log(
+        "Is this a Google token format?",
+        isGoogleToken ? "Yes" : "No"
+      );
+
+      return res.status(401).json({
+        message: "Unauthorized",
         detail: "Token not found in database",
-        tokenFormat: isGoogleToken ? "Google format" : "Unknown format"
+        tokenFormat: isGoogleToken ? "Google format" : "Unknown format",
       });
     }
 
