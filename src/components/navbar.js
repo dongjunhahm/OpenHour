@@ -27,8 +27,7 @@ const Navbar = () => {
 
   return (
     <div className="navbar bg-base-100 shadow-sm">
-      <div className="flex-none">
-      </div>
+      <div className="flex-none"></div>
       <div className="flex-1">
         <a className="btn btn-ghost text-xl">OpenHour</a>
       </div>
@@ -38,15 +37,22 @@ const Navbar = () => {
             <label tabIndex={0} className="btn btn-ghost">
               My Account
             </label>
-            <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
-              <li><a onClick={handleDashboard}>Dashboard</a></li>
-              <li><a onClick={handleSignOut}>Sign Out</a></li>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52"
+            >
+              <li>
+                <a onClick={handleDashboard}>Dashboard</a>
+              </li>
+              <li>
+                <a onClick={handleSignOut}>Sign Out</a>
+              </li>
             </ul>
           </div>
         ) : (
           <button
             onClick={handleSignIn}
-            className="bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
+            className="btn bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
           >
             Sign In
           </button>
