@@ -48,8 +48,8 @@ const SharedCalendarPage = () => {
         console.log("WebSocket connected");
         socket.emit("joinCalendar", id);
 
-        // Automatically refresh available slots when a user joins
-        refreshAvailableSlots(true);
+        // Don't automatically refresh on simple connection
+        // We'll let the server decide when we need to refresh
       });
 
       // Listen for user count updates
@@ -58,7 +58,11 @@ const SharedCalendarPage = () => {
         setActiveUsers(data.count);
 
         // Automatically refresh available slots when a new user joins
-        refreshAvailableSlots(false);
+        // Only refresh if the isNewUser flag is true (indicating this is a new join, not an invite)
+        if (data.isNewUser) {
+          console.log("New user joined, refreshing slots");
+          refreshAvailableSlots(false);
+        }
       });
 
       socket.on("userLeft", (data) => {
@@ -139,17 +143,8 @@ const SharedCalendarPage = () => {
     }
   };
 
-  // Setup automatic refresh for slots every minute
-  useEffect(() => {
-    if (!id) return;
-
-    // Schedule regular refresh of available slots
-    const refreshInterval = setInterval(() => {
-      refreshAvailableSlots(false); // Silent refresh without UI feedback
-    }, 30000); // Every 30 seconds for more immediate updates
-
-    return () => clearInterval(refreshInterval);
-  }, [id]);
+  // Remove automatic periodic refresh and only refresh when needed
+  // We no longer set up an interval here since we only want to refresh when a new user joins
 
   // Main data loading effect
   useEffect(() => {
@@ -377,7 +372,7 @@ const SharedCalendarPage = () => {
     }
   };
 
-  const refreshAvailableSlots = async (emitUpdate = true) => {
+  const refreshAvailableSlots = async (emitUpdate = true, isNewUser = false) => {
     // Get current token from Redux or localStorage
     let currentToken = token || localStorage.getItem("auth_token");
     if (!currentToken) {
@@ -435,8 +430,12 @@ const SharedCalendarPage = () => {
       console.log("Slots successfully refreshed");
 
       // Emit WebSocket event to notify other users, but only if we're the initiator
+      // Now we include the isNewUser flag to control when refreshes happen
       if (emitUpdate && socketRef.current) {
-        socketRef.current.emit("slotsUpdated", { calendarId: id });
+        socketRef.current.emit("slotsUpdated", { 
+          calendarId: id,
+          isNewUser: isNewUser // Pass the flag indicating if this is a new user
+        });
       }
     } catch (err) {
       console.error("Error refreshing slots:", err);

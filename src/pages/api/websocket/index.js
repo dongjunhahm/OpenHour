@@ -34,7 +34,8 @@ const SocketHandler = (req, res) => {
       
       // Notify others that someone joined
       socket.to(`calendar-${calendarId}`).emit('userJoined', {
-        count: activeCalendars.get(calendarId).size
+        count: activeCalendars.get(calendarId).size,
+        isNewUser: true // Flag to indicate this is a new user joining
       });
     });
     
@@ -60,16 +61,19 @@ const SocketHandler = (req, res) => {
       console.log(`Calendar ${calendarId} updated, notifying all clients`);
       
       // Broadcast to all clients in the room except sender
-      socket.to(`calendar-${calendarId}`).emit('refreshCalendar');
+      socket.to(`calendar-${calendarId}`).emit('calendarUpdated', data);
     });
     
     // Handle available slots updates
     socket.on('slotsUpdated', (data) => {
-      const { calendarId } = data;
-      console.log(`Slots for calendar ${calendarId} updated, notifying all clients`);
+      const { calendarId, isNewUser } = data;
+      console.log(`Slots for calendar ${calendarId} updated, notifying all clients. New user: ${isNewUser}`);
       
-      // Broadcast to all clients in the room except sender
-      socket.to(`calendar-${calendarId}`).emit('refreshSlots');
+      // Only broadcast refresh if this is from a new user joining
+      if (isNewUser) {
+        // Broadcast to all clients in the room except sender
+        socket.to(`calendar-${calendarId}`).emit('refreshSlots');
+      }
     });
     
     // Handle disconnection

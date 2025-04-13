@@ -3,11 +3,11 @@ import { pool } from "../db";
 import { parse } from "cookie";
 
 // Log database connection status on startup
-console.log('Database connection environment:', {
+console.log("Database connection environment:", {
   isVercel: !!process.env.VERCEL,
   hasPostgresUrl: !!process.env.POSTGRES_URL,
   hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
-  env: process.env.NODE_ENV
+  env: process.env.NODE_ENV,
 });
 
 export default async function handler(req, res) {
@@ -16,9 +16,7 @@ export default async function handler(req, res) {
   }
 
   const { token, startDate, endDate } = req.body;
-  // Setting default minDuration to 0 since we're removing the feature
-  const minDuration = 0;
-  console.log("Received request with params:", { token, startDate, endDate, minDuration });
+  console.log("Received request with params:", { token, startDate, endDate });
 
   const client = await pool.connect();
 
@@ -33,9 +31,11 @@ export default async function handler(req, res) {
         AND table_name = 'users'
       );
     `);
-    
+
     if (!tableCheck.rows[0].exists) {
-      throw new Error("Database tables not initialized. Please run the database setup first.");
+      throw new Error(
+        "Database tables not initialized. Please run the database setup first."
+      );
     }
 
     // Continue with the original query
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       "SELECT id FROM users WHERE google_token = $1",
       [token]
     );
-    
+
     // If user doesn't exist, create a new user
     let userId;
     if (userResult.rows.length === 0) {
@@ -60,50 +60,47 @@ export default async function handler(req, res) {
     // PST is UTC-8, so:
     // - 12:00 AM PST = 8:00 AM UTC (same day)
     // - 11:59:59 PM PST = 7:59:59 AM UTC (next day)
-    
+
     // Parse start date to 12:00 AM PST (beginning of the day)
     const parseStart = (dateString) => {
       let date;
-      
-      if (dateString.includes('-')) {
+
+      if (dateString.includes("-")) {
         // For ISO format dates (YYYY-MM-DD)
-        const [year, month, day] = dateString.split('-').map(Number);
+        const [year, month, day] = dateString.split("-").map(Number);
         // Create date object
         date = new Date(year, month - 1, day);
       } else {
         // For other date formats
         date = new Date(dateString);
       }
-      
+
       // Set time to 12:00:00 AM PST (8:00:00 AM UTC same day)
       date.setUTCHours(7, 0, 0, 0);
-      
+
       return date;
     };
 
     // Parse end date to 11:59:59 PM PST (end of the day)
     const parseEnd = (dateString) => {
       let date;
-      
-      if (dateString.includes('-')) {
+
+      if (dateString.includes("-")) {
         // For ISO format dates (YYYY-MM-DD)
-        const [year, month, day] = dateString.split('-').map(Number);
+        const [year, month, day] = dateString.split("-").map(Number);
         // Create date object
         date = new Date(year, month - 1, day + 1);
       } else {
         // For other date formats
         date = new Date(dateString);
       }
-      
+
       // Set time to 11:59:59 PM PST (7:59:59 AM UTC next day)
       date.setUTCHours(6, 59, 59, 999);
-      
+
       return date;
     };
 
-    // Use the previously defined minDuration value
-    // The duration is in minutes
-    
     // Insert into calendars table according to the schema
     const calendarResult = await client.query(
       `INSERT INTO calendars(
@@ -116,15 +113,14 @@ export default async function handler(req, res) {
         created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id, invite_code`,
       [
-        'Shared Calendar', // title
-        'Calendar created with OpenHour', // description
-        minDuration, // min_slot_duration in minutes
+        "Shared Calendar", // title
+        "Calendar created with OpenHour", // description
         parseStart(startDate),
         parseEnd(endDate),
-        userId
+        userId,
       ]
     );
-    
+
     const calendarId = calendarResult.rows[0].id;
 
     // Insert the user as a participant with owner status
@@ -140,7 +136,7 @@ export default async function handler(req, res) {
     res.status(201).json({
       calendarId: calendarId,
       inviteCode: calendarResult.rows[0].invite_code,
-      message: "Calendar created successfully"
+      message: "Calendar created successfully",
     });
   } catch (error) {
     try {
@@ -148,7 +144,7 @@ export default async function handler(req, res) {
     } catch (rollbackError) {
       console.error("Rollback failed:", rollbackError.message);
     }
-    
+
     // Detailed error logging
     console.error("Calendar creation error:", {
       message: error.message,
@@ -156,21 +152,24 @@ export default async function handler(req, res) {
       stack: error.stack,
       query: error.query,
       detail: error.detail,
-      isConnectionError: error.message.includes('ECONNREFUSED')
+      isConnectionError: error.message.includes("ECONNREFUSED"),
     });
-    
+
     // Return more helpful error message based on error type
-    if (error.message.includes('ECONNREFUSED')) {
+    if (error.message.includes("ECONNREFUSED")) {
       res.status(500).json({
-        message: "Database connection failed. Check Vercel environment variables.",
+        message:
+          "Database connection failed. Check Vercel environment variables.",
         error: error.message,
-        suggestion: "Verify that POSTGRES_URL or related environment variables are set correctly in Vercel."
+        suggestion:
+          "Verify that POSTGRES_URL or related environment variables are set correctly in Vercel.",
       });
-    } else if (error.code === '42P01') { // Relation does not exist
+    } else if (error.code === "42P01") {
+      // Relation does not exist
       res.status(500).json({
         message: "Database tables not created yet.",
         error: error.message,
-        suggestion: "Database schema needs to be initialized."
+        suggestion: "Database schema needs to be initialized.",
       });
     } else {
       res.status(500).json({

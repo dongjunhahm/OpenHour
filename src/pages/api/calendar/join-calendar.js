@@ -1,5 +1,6 @@
 import { pool } from "../db";
 import { google } from "googleapis";
+import { getIO } from "../websocket";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -118,6 +119,21 @@ export default async function handler(req, res) {
     }
 
     await client.query("COMMIT");
+
+    // Notify all users via WebSocket that a new user has joined
+    const io = getIO();
+    if (io) {
+      // Broadcast to all users in the calendar room that someone has joined
+      // Include the isNewUser flag to indicate this is a user join event (not just a socket connection)
+      io.to(`calendar-${calendarId}`).emit('userJoined', {
+        count: 0, // The count will be calculated client-side when they receive the event
+        isNewUser: true // Flag indicating this is a new user join event
+      });
+      
+      console.log(`WebSocket notification sent for user joining calendar ${calendarId}`);
+    } else {
+      console.log('WebSocket server not available for notifications');
+    }
 
     return res.status(200).json({
       message: "Successfully joined the calendar",
