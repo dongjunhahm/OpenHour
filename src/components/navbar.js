@@ -27,15 +27,15 @@ const Navbar = () => {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center">
-            <button 
-              className="text-2xl font-bold flex items-center" 
+            <button
+              className="text-2xl font-bold flex items-center"
               onClick={handleHome}
             >
               <span className="text-black">Open</span>
               <span className="text-black">Hour</span>
             </button>
           </div>
-          
+
           {/* Sign In Button */}
           <div>
             {isLoggedIn ? (
@@ -48,7 +48,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={handleSignIn}
-                className="bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
+                className="btn hover bg-black text-white font-medium px-5 py-2 rounded-lg transition duration-300"
               >
                 Sign In
               </button>
