@@ -12,7 +12,11 @@ export async function googleSignIn() {
 
     const user = result.user;
 
-    console.log("user info", user);
+    console.log("Google Login - token info:", {
+      tokenPrefix: token.substring(0, 6) + '...',
+      tokenLength: token.length,
+      user: user.email
+    });
     return { user, credential, token };
   } catch (error) {
     const errorCode = error.code;
