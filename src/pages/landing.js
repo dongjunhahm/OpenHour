@@ -6,7 +6,7 @@ import "../styles/globals.css";
 
 const Landing = () => {
   const router = useRouter();
-
+  //hi johann
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
