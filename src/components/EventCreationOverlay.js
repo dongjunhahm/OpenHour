@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import TimeRangeSlider from './TimeRangeSlider';
 
 const EventCreationOverlay = ({ onClose, selectedDate, calendarId, onEventCreated }) => {
@@ -38,6 +39,9 @@ const EventCreationOverlay = ({ onClose, selectedDate, calendarId, onEventCreate
     }).format(date);
   };
   
+  // Get the token from Redux store
+  const reduxToken = useSelector((state) => state.token?.token);
+
   // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,9 +53,15 @@ const EventCreationOverlay = ({ onClose, selectedDate, calendarId, onEventCreate
     
     setOverlayState('loading');
     
-    // Get token from your auth system (this will depend on your app's auth setup)
-    // For example, you might get it from localStorage or a Redux store
-    const token = localStorage.getItem('googleToken') || '';
+    // Get token from Redux, or fallback to localStorage
+    let token = reduxToken || localStorage.getItem('googleToken') || '';
+    
+    // If token is still missing or invalid, show an error
+    if (!token || token === 'missing') {
+      setErrorMessage('Authentication token is missing. Please log in again.');
+      setOverlayState('error');
+      return;
+    }
     console.log('Token found:', token ? 'Yes (length: ' + token.length + ')' : 'No');
     
     // Prepare data for API call
