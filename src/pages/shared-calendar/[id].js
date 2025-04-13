@@ -556,37 +556,27 @@ const SharedCalendarPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Calendar View */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Available Time Slots
-              </h2>
-              {availableSlots.length > 0 ? (
-                <SharedCalendarView
-                  availableSlots={availableSlots}
-                  onDateClick={(date) => {
-                    setSelectedDate(date);
-                    setShowEventOverlay(true);
-                  }}
-                />
-              ) : (
-                <p className="text-gray-600">
-                  No available time slots found for this period.
-                </p>
-              )}
-              <button
-                className="mt-4 btn btn-primary"
-                onClick={() => refreshAvailableSlots(true)}
-              >
-                Refresh Available Slots
-              </button>
-            </div>
-          </div>
-
-          {/* Participants */}
+          {/* Left Column - Invite & Participants */}
           <div>
+            {/* Invite Users */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Invite User</h2>
+              <div className="flex items-center">
+                <input
+                  type="email"
+                  className="input input-bordered flex-grow mr-2"
+                  placeholder="Enter email address"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+                <button className="btn btn-primary" onClick={handleInviteUser}>
+                  Invite
+                </button>
+              </div>
+            </div>
+
+            {/* Participants */}
+            <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Participants</h2>
               <ul className="divide-y divide-gray-200">
                 {participants.map((participant) => (
@@ -628,22 +618,36 @@ const SharedCalendarPage = () => {
                 ))}
               </ul>
             </div>
+          </div>
 
-            {/* Invite Users */}
+          {/* Calendar View - Moved to right side */}
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Invite User</h2>
-              <div className="flex items-center">
-                <input
-                  type="email"
-                  className="input input-bordered flex-grow mr-2"
-                  placeholder="Enter email address"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-                <button className="btn btn-primary" onClick={handleInviteUser}>
-                  Invite
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">
+                  Available Time Slots
+                </h2>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => refreshAvailableSlots(true)}
+                >
+                  Refresh Available Slots
                 </button>
               </div>
+              {availableSlots.length > 0 ? (
+                <SharedCalendarView
+                  availableSlots={availableSlots}
+                  onDateClick={(date) => {
+                    setSelectedDate(date);
+                    setShowEventOverlay(true);
+                  }}
+                />
+              ) : (
+                <p className="text-gray-600">
+                  No available time slots found for this period.
+                </p>
+              )}
+              {/* Refresh button moved to the top right */}
             </div>
           </div>
         </div>
