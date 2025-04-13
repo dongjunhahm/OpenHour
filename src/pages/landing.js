@@ -63,13 +63,13 @@ const Landing = () => {
               <StepItem
                 number="2"
                 title="Invite Team"
-                description="Share a link with participants to connect their calendars too."
+                description="Send an invite to participants to connect with their calendars too."
                 color="bg-green-500"
               />
               <StepItem
                 number="3"
                 title="Pick a Time"
-                description="Browse all available times and select what works best."
+                description="Browse all available times and select what works best!"
                 color="bg-purple-500"
               />
             </div>
