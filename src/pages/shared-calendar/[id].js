@@ -18,8 +18,6 @@ const SharedCalendarPage = () => {
   const [participants, setParticipants] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [showEventOverlay, setShowEventOverlay] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [titleUpdateLoading, setTitleUpdateLoading] = useState(false);

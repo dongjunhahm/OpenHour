@@ -38,9 +38,9 @@ export default async function handler(req, res) {
         .json({ message: "Not a participant in this calendar" });
     }
 
-    // Get all participants
+    // Get all participants with status
     const participantsResult = await client.query(
-      `SELECT u.id, u.name, u.email, cp.joined_at
+      `SELECT u.id, u.name, u.email, cp.joined_at, cp.status
        FROM calendar_participants cp
        JOIN users u ON cp.user_id = u.id
        WHERE cp.calendar_id = $1

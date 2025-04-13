@@ -79,10 +79,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "User already invited" });
     }
 
-    // Add user as participant
+    // Add user as participant with pending status
     await client.query(
-      "INSERT INTO calendar_participants (calendar_id, user_id) VALUES ($1, $2)",
-      [calendarId, invitedUserId]
+      "INSERT INTO calendar_participants (calendar_id, user_id, status) VALUES ($1, $2, $3)",
+      [calendarId, invitedUserId, "pending"]
     );
 
     // Generate the invitation URL - pointing to our join-calendar page
