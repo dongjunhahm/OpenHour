@@ -8,9 +8,9 @@ export default async function handler(req, res) {
   const { slotId, token } = req.body;
 
   if (!slotId || !token) {
-    return res.status(400).json({ 
-      message: "Missing required parameters", 
-      required: "slotId, token"
+    return res.status(400).json({
+      message: "Missing required parameters",
+      required: "slotId, token",
     });
   }
 
@@ -60,11 +60,15 @@ export default async function handler(req, res) {
     // Check if slot spans midnight
     const startDay = new Date(start_time);
     const endDay = new Date(end_time);
-    
-    if (startDay.getDate() === endDay.getDate() && 
-        startDay.getMonth() === endDay.getMonth() && 
-        startDay.getFullYear() === endDay.getFullYear()) {
-      return res.status(400).json({ message: "Slot does not span multiple days" });
+
+    if (
+      startDay.getDate() === endDay.getDate() &&
+      startDay.getMonth() === endDay.getMonth() &&
+      startDay.getFullYear() === endDay.getFullYear()
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Slot does not span multiple days" });
     }
 
     // Calculate midnight at the end of the start day
@@ -72,17 +76,17 @@ export default async function handler(req, res) {
       startDay.getFullYear(),
       startDay.getMonth(),
       startDay.getDate() + 1, // Next day
-      0, 0, 0, 0 // 00:00:00.000
+      7,
+      0,
+      0,
+      0 // 00:00:00.000
     );
-    
+
     // Subtract 1 millisecond to get 23:59:59.999
     const endOfDay = new Date(midnight.getTime() - 1);
-    
+
     // Delete the original slot
-    await client.query(
-      "DELETE FROM available_slots WHERE id = $1",
-      [slotId]
-    );
+    await client.query("DELETE FROM available_slots WHERE id = $1", [slotId]);
 
     // Create the two new slots
     // First slot: from start time to end of day (23:59:59.999)
@@ -103,12 +107,12 @@ export default async function handler(req, res) {
       message: "Overnight slot successfully split",
       eveningSlot: {
         start: start_time,
-        end: endOfDay.toISOString()
+        end: endOfDay.toISOString(),
       },
       morningSlot: {
         start: midnight.toISOString(),
-        end: end_time
-      }
+        end: end_time,
+      },
     });
   } catch (error) {
     await client.query("ROLLBACK");
