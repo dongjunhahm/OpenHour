@@ -1,5 +1,7 @@
 import { pool } from "../db";
 import axios from "axios";
+// For WebSocket notification
+import { Server } from 'socket.io';
 import {
   sendInvitationEmail,
   isSendGridConfigured,
@@ -134,6 +136,15 @@ export default async function handler(req, res) {
         console.error("Error finding available slots:", slotError);
         // This is non-critical, so we continue
       }
+    }
+
+    // Notify connected clients via WebSocket if available
+    if (res.socket && res.socket.server && res.socket.server.io) {
+      const io = res.socket.server.io;
+      io.to(`calendar-${calendarId}`).emit('participantsUpdated');
+      console.log(`WebSocket notification sent for calendar ${calendarId} - new participant invited`);
+    } else {
+      console.log('WebSocket server not initialized, notification not sent');
     }
 
     res.status(201).json({

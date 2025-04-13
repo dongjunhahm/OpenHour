@@ -1,7 +1,8 @@
 "use client";
 import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import io from "socket.io-client";
 import axios from "axios";
 import Navbar from "../../components/navbar";
 import SharedCalendarView from "../../components/sharedCalendarView";
@@ -23,7 +24,134 @@ const SharedCalendarPage = () => {
   const [titleUpdateLoading, setTitleUpdateLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showEventOverlay, setShowEventOverlay] = useState(false);
+  const [activeUsers, setActiveUsers] = useState(1); // Start with just yourself
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const socketRef = useRef(null);
+  const socketInitialized = useRef(false);
 
+  // Initialize WebSocket connection
+  useEffect(() => {
+    // Function to initialize socket connection
+    const initializeSocket = async () => {
+      if (socketInitialized.current) return;
+      
+      // Make sure the socket.io server is running
+      await fetch('/api/websocket');
+      
+      // Connect to WebSocket server
+      const socket = io();
+      socketRef.current = socket;
+      socketInitialized.current = true;
+      
+      // Join specific calendar room
+      socket.on('connect', () => {
+        console.log('WebSocket connected');
+        socket.emit('joinCalendar', id);
+        
+        // Automatically refresh available slots when a user joins
+        refreshAvailableSlots(true);
+      });
+      
+      // Listen for user count updates
+      socket.on('userJoined', (data) => {
+        console.log('User joined, active users:', data.count);
+        setActiveUsers(data.count);
+        
+        // Automatically refresh available slots when a new user joins
+        refreshAvailableSlots(false);
+      });
+      
+      socket.on('userLeft', (data) => {
+        console.log('User left, active users:', data.count);
+        setActiveUsers(data.count);
+      });
+      
+      // Listen for calendar data updates
+      socket.on('calendarUpdated', (data) => {
+        console.log('Calendar updated notification received');
+        // Update the calendar title if it matches current calendar
+        if (data.calendarId === id) {
+          setCalendarData(prevData => ({
+            ...prevData,
+            title: data.title
+          }));
+          setNewTitle(data.title);
+        }
+        setLastUpdated(new Date());
+      });
+      
+      // Listen for slots updates
+      socket.on('refreshSlots', () => {
+        console.log('Refresh slots notification received');
+        refreshAvailableSlots(false); // Don't emit another event to avoid loops
+        setLastUpdated(new Date());
+      });
+      
+      // Listen for participants updates
+      socket.on('participantsUpdated', () => {
+        console.log('Participants updated notification received');
+        refreshParticipants();
+        setLastUpdated(new Date());
+      });
+      
+      // Handle disconnection
+      socket.on('disconnect', () => {
+        console.log('WebSocket disconnected');
+        // Try to reconnect
+        setTimeout(() => {
+          if (socket.disconnected) {
+            console.log('Attempting to reconnect...');
+            socket.connect();
+          }
+        }, 2000);
+      });
+      
+      return socket;
+    };
+    
+    // Initialize socket if we have a calendar ID
+    if (id) {
+      initializeSocket();
+    }
+    
+    // Cleanup function
+    return () => {
+      if (socketRef.current) {
+        console.log('Cleaning up socket connection');
+        socketRef.current.emit('leaveCalendar', id);
+        socketRef.current.disconnect();
+      }
+    };
+  }, [id]);
+
+  // Function to refresh participants list
+  const refreshParticipants = async () => {
+    let currentToken = token || localStorage.getItem("auth_token");
+    if (!currentToken) return;
+    
+    try {
+      const participantsResponse = await axios.get(
+        `/api/calendar/get-participants?calendarId=${id}&token=${currentToken}`
+      );
+      setParticipants(participantsResponse.data.participants);
+    } catch (err) {
+      console.error("Error refreshing participants:", err);
+    }
+  };
+
+  // Setup automatic refresh for slots every minute
+  useEffect(() => {
+    if (!id) return;
+    
+    // Schedule regular refresh of available slots
+    const refreshInterval = setInterval(() => {
+      refreshAvailableSlots(false); // Silent refresh without UI feedback
+    }, 30000); // Every 30 seconds for more immediate updates
+    
+    return () => clearInterval(refreshInterval);
+  }, [id]);
+
+  // Main data loading effect
   useEffect(() => {
     if (!id) return;
 
@@ -169,6 +297,14 @@ const SharedCalendarPage = () => {
           ...calendarData,
           title: response.data.calendar.title,
         });
+        
+        // Emit WebSocket event to notify other users
+        if (socketRef.current) {
+          socketRef.current.emit('calendarUpdated', { 
+            calendarId: id,
+            title: response.data.calendar.title 
+          });
+        }
       }
 
       setIsEditingTitle(false);
@@ -240,7 +376,7 @@ const SharedCalendarPage = () => {
     }
   };
 
-  const refreshAvailableSlots = async () => {
+  const refreshAvailableSlots = async (emitUpdate = true) => {
     // Get current token from Redux or localStorage
     let currentToken = token || localStorage.getItem("auth_token");
     if (!currentToken) {
@@ -294,7 +430,13 @@ const SharedCalendarPage = () => {
       }
 
       setLoading(false);
+      setLastUpdated(new Date());
       console.log("Slots successfully refreshed");
+      
+      // Emit WebSocket event to notify other users, but only if we're the initiator
+      if (emitUpdate && socketRef.current) {
+        socketRef.current.emit('slotsUpdated', { calendarId: id });
+      }
     } catch (err) {
       console.error("Error refreshing slots:", err);
       setError("Failed to refresh available slots");
@@ -353,6 +495,17 @@ const SharedCalendarPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
+      
+      {/* Real-time status indicator */}
+      <div className="bg-blue-100 p-2 flex justify-between items-center">
+        <div className="flex items-center">
+          <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+          <span className="text-sm">Live: {activeUsers} {activeUsers === 1 ? 'user' : 'users'} viewing</span>
+        </div>
+        <div className="text-xs text-gray-600">
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
@@ -422,7 +575,7 @@ const SharedCalendarPage = () => {
               )}
               <button
                 className="mt-4 btn btn-primary"
-                onClick={refreshAvailableSlots}
+                onClick={() => refreshAvailableSlots(true)}
               >
                 Refresh Available Slots
               </button>

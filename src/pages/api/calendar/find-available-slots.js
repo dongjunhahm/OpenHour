@@ -1,5 +1,7 @@
 import { pool } from "../db";
 import { google } from "googleapis";
+// For WebSocket notification
+import { getIO } from '../websocket';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -234,6 +236,21 @@ export default async function handler(req, res) {
     }
 
     await client.query("COMMIT");
+
+    // Notify connected clients via WebSocket if available
+    // Try using the getIO helper function first
+    const io = getIO();
+    if (io) {
+      io.to(`calendar-${calendarId}`).emit('refreshSlots');
+      console.log(`WebSocket notification sent for calendar ${calendarId} to refresh slots via getIO()`);
+    } else if (res.socket && res.socket.server && res.socket.server.io) {
+      // Fallback to the socket server if available directly
+      const serverIO = res.socket.server.io;
+      serverIO.to(`calendar-${calendarId}`).emit('refreshSlots');
+      console.log(`WebSocket notification sent for calendar ${calendarId} to refresh slots via server.io`);
+    } else {
+      console.log('WebSocket server not initialized, notification not sent');
+    }
 
     return res.status(200).json({
       message: "avaialble sltos found",

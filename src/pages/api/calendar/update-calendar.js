@@ -1,4 +1,6 @@
 import { pool } from "../db";
+// For WebSocket notification
+import { getIO } from '../websocket';
 
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -45,6 +47,27 @@ export default async function handler(req, res) {
 
     if (updateResult.rows.length === 0) {
       return res.status(404).json({ message: "Calendar not found" });
+    }
+
+    // Notify connected clients via WebSocket if available
+    // Try using the getIO helper function first
+    const io = getIO();
+    if (io) {
+      io.to(`calendar-${calendarId}`).emit('calendarUpdated', {
+        title: title,
+        calendarId: calendarId
+      });
+      console.log(`WebSocket notification sent for calendar ${calendarId} updated via getIO()`);
+    } else if (res.socket && res.socket.server && res.socket.server.io) {
+      // Fallback to the socket server if available directly
+      const serverIO = res.socket.server.io;
+      serverIO.to(`calendar-${calendarId}`).emit('calendarUpdated', {
+        title: title,
+        calendarId: calendarId
+      });
+      console.log(`WebSocket notification sent for calendar ${calendarId} updated via server.io`);
+    } else {
+      console.log('WebSocket server not initialized, notification not sent');
     }
 
     return res.status(200).json({
