@@ -54,11 +54,22 @@ export default async function handler(req, res) {
       ]);
     }
 
-    // Find the calendar by invite code
-    const calendarResult = await client.query(
+    // Find the calendar by invite code or by direct ID
+    let calendarResult;
+    
+    // First try to look up by invite_code
+    calendarResult = await client.query(
       "SELECT id, title FROM calendars WHERE invite_code = $1",
       [inviteCode]
     );
+    
+    // If not found, try looking up directly by ID (for direct join links)
+    if (calendarResult.rows.length === 0) {
+      calendarResult = await client.query(
+        "SELECT id, title FROM calendars WHERE id = $1",
+        [inviteCode]
+      );
+    }
 
     if (calendarResult.rows.length === 0) {
       return res.status(404).json({ message: "Calendar not found" });
