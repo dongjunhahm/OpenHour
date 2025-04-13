@@ -17,6 +17,7 @@ export default async function handler(req, res) {
 
   const { token, startDate, endDate } = req.body;
   // Setting default minDuration to 0 since we're removing the feature
+  const minDuration = 0;
   console.log("Received request with params:", { token, startDate, endDate, minDuration });
 
   const client = await pool.connect();
@@ -100,8 +101,8 @@ export default async function handler(req, res) {
       return date;
     };
 
-    // Set minimum duration to 0 minutes (removing the feature)
-    const minDurationMinutes = 0;
+    // Use the previously defined minDuration value
+    // The duration is in minutes
     
     // Insert into calendars table according to the schema
     const calendarResult = await client.query(
@@ -117,7 +118,7 @@ export default async function handler(req, res) {
       [
         'Shared Calendar', // title
         'Calendar created with OpenHour', // description
-        minDurationMinutes, // min_slot_duration in minutes
+        minDuration, // min_slot_duration in minutes
         parseStart(startDate),
         parseEnd(endDate),
         userId

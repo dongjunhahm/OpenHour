@@ -137,13 +137,13 @@ export default async function handler(req, res) {
 
     //check if there is time after the last event
     if (currentTime < endTime) {
-    const gap = endTime - currentTime;
-    // Always add the slot regardless of duration
-    availableSlots.push({
-    start: new Date(currentTime),
-    end: new Date(endTime),
-    duration: gap / (60 * 1000),
-    });
+      const gap = endTime - currentTime;
+      // Always add the slot regardless of duration
+      availableSlots.push({
+        start: new Date(currentTime),
+        end: new Date(endTime),
+        duration: gap / (60 * 1000),
+      });
     }
 
     //storing availbale slots in teh database
