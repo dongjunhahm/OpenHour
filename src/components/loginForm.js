@@ -48,13 +48,13 @@ const LoginForm = () => {
 
         try {
           // Ensure axios is imported and available
-          if (typeof axios === 'undefined') {
-            console.error('Axios is not defined; using fetch instead');
+          if (typeof axios === "undefined") {
+            console.error("Axios is not defined; using fetch instead");
             // Fallback to fetch if axios is undefined
             await fetch("/api/user/update-token", {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
               },
               body: JSON.stringify({
                 token,
@@ -70,15 +70,16 @@ const LoginForm = () => {
               name: result.user.displayName,
             });
           }
-          
+
           // Log successful token saving for debugging
-          console.log('Token saved successfully');
-          
+          console.log("Token saved successfully");
+
           // Store token in localStorage as a backup with specific key names
-          localStorage.setItem('auth_token', token);
-          localStorage.setItem('googleToken', token);  // This key name is used in EventCreationOverlay
-          console.log('Token also saved to localStorage (both auth_token and googleToken)');
-          
+          localStorage.setItem("auth_token", token);
+          localStorage.setItem("googleToken", token); // This key name is used in EventCreationOverlay
+          console.log(
+            "Token also saved to localStorage (both auth_token and googleToken)"
+          );
         } catch (tokenError) {
           console.error("error saving token to db,", tokenError);
         }
