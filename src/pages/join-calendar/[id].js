@@ -18,21 +18,21 @@ const CalendarInvitePage = () => {
       const joinCalendar = async () => {
         try {
           // Call the join-calendar API to update participant status
-          await axios.post('/api/calendar/join-calendar', {
+          await axios.post("/api/calendar/join-calendar", {
             inviteCode: id, // Using the ID as the invite code
-            token
+            token,
           });
-          
-          console.log('Successfully joined the calendar');
+
+          console.log("Successfully joined the calendar");
           // After joining, redirect to the shared calendar view
           router.push(`/shared-calendar/${id}`);
         } catch (error) {
-          console.error('Error joining calendar:', error);
+          console.error("Error joining calendar:", error);
           // Still redirect to the shared calendar, they might already be a member
           router.push(`/shared-calendar/${id}`);
         }
       };
-      
+
       joinCalendar();
     } else {
       // User is not logged in, redirect to login page with redirection info
