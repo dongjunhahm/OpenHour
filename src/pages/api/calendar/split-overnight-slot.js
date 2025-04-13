@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       startDay.getFullYear(),
       startDay.getMonth(),
       startDay.getDate() + 1, // Next day
-      7,
+      0, // Set to 0 for midnight (00:00:00)
       0,
       0,
       0 // 00:00:00.000
