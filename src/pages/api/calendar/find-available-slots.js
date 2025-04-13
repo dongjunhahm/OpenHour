@@ -146,13 +146,50 @@ export default async function handler(req, res) {
       });
     }
 
-    //storing availbale slots in teh database
-    //fewf
+    //storing available slots in the database with automatic splitting of overnight slots
     for (const slot of availableSlots) {
-      await client.query(
-        "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
-        [calendarId, slot.start, slot.end]
-      );
+      // Check if the slot is overnight (spans across midnight)
+      const startDay = new Date(slot.start);
+      const endDay = new Date(slot.end);
+      
+      if (startDay.getDate() !== endDay.getDate() || 
+          startDay.getMonth() !== endDay.getMonth() || 
+          startDay.getFullYear() !== endDay.getFullYear()) {
+        
+        // Split the overnight slot automatically
+        
+        // Calculate midnight at the end of the start day
+        const midnight = new Date(
+          startDay.getFullYear(),
+          startDay.getMonth(),
+          startDay.getDate() + 1, // Next day
+          0, 0, 0, 0 // 00:00:00.000
+        );
+        
+        // Subtract 1 millisecond to get 23:59:59.999
+        const endOfDay = new Date(midnight.getTime() - 1);
+        
+        // Insert the two split slots
+        // First slot: from start time to end of day (23:59:59.999)
+        await client.query(
+          "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+          [calendarId, slot.start, endOfDay]
+        );
+        
+        // Second slot: from midnight (00:00:00.000) to end time
+        await client.query(
+          "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+          [calendarId, midnight, slot.end]
+        );
+        
+        console.log(`Automatically split overnight slot: ${slot.start} - ${slot.end}`);
+      } else {
+        // Regular slot (doesn't span overnight)
+        await client.query(
+          "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+          [calendarId, slot.start, slot.end]
+        );
+      }
     }
 
     await client.query("COMMIT");

@@ -107,28 +107,12 @@ const SharedCalendarView = ({ availableSlots }) => {
                       <span className="mx-2">-</span>
                       <span className="font-medium">{formatTime(slot.end)}</span>
                       
-                      {/* Show indicator for overnight slots */}
-                      {isOvernightSlot(slot) && (
-                        <span className="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                          Overnight
-                        </span>
-                      )}
+                      {/* We don't need overnight indicators anymore since slots are auto-split */}
                     </div>
                     <div className="flex items-center">
-                      <div className="text-sm text-gray-500 mr-4">
+                      <div className="text-sm text-gray-500">
                         {Math.round(slot.duration)} min
                       </div>
-                      
-                      {/* Add split button for overnight slots */}
-                      {isOvernightSlot(slot) && (
-                        <button
-                          className="btn btn-xs btn-outline"
-                          onClick={() => handleSplitOvernightSlot(slot)}
-                          disabled={loading}
-                        >
-                          {loading ? 'Splitting...' : 'Split at midnight'}
-                        </button>
-                      )}
                     </div>
                   </div>
                 </li>
