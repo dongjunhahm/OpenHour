@@ -148,7 +148,7 @@ export default async function handler(req, res) {
     }
 
     //storing availbale slots in teh database
-
+    //fewf
     for (const slot of availableSlots) {
       await client.query(
         "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
