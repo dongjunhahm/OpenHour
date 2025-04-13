@@ -38,9 +38,9 @@ export default async function handler(req, res) {
         .json({ message: "Not a participant in this calendar" });
     }
 
-    // Get all participants with status
+    // Get all participants without status column
     const participantsResult = await client.query(
-      `SELECT u.id, u.name, u.email, cp.joined_at, cp.status
+      `SELECT u.id, u.name, u.email, cp.joined_at, cp.is_owner
        FROM calendar_participants cp
        JOIN users u ON cp.user_id = u.id
        WHERE cp.calendar_id = $1
@@ -48,8 +48,16 @@ export default async function handler(req, res) {
       [calendarId]
     );
 
+    // Derive status from existing data
+    const participantsWithStatus = participantsResult.rows.map(participant => ({
+      ...participant,
+      // Assume all participants who have joined are 'active'
+      // You could adjust this logic based on your application needs
+      status: 'active'
+    }));
+
     return res.status(200).json({
-      participants: participantsResult.rows,
+      participants: participantsWithStatus,
     });
   } catch (error) {
     console.error("Error getting participants:", error);
