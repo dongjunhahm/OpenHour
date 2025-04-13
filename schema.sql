@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS calendar_participants (
   calendar_id INTEGER REFERENCES calendars(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   is_owner BOOLEAN DEFAULT FALSE,
+  status VARCHAR(20) DEFAULT 'pending',
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(calendar_id, user_id)
 );

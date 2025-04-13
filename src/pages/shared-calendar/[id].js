@@ -21,6 +21,8 @@ const SharedCalendarPage = () => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [titleUpdateLoading, setTitleUpdateLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showEventOverlay, setShowEventOverlay] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -433,19 +435,36 @@ const SharedCalendarPage = () => {
               <h2 className="text-xl font-semibold mb-4">Participants</h2>
               <ul className="divide-y divide-gray-200">
                 {participants.map((participant) => (
-                  <li key={participant.id} className="py-3 flex items-center">
-                    <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mr-3">
-                      {participant.name
-                        ? participant.name.charAt(0).toUpperCase()
-                        : "?"}
+                  <li key={participant.id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center mr-3">
+                        {participant.name
+                          ? participant.name.charAt(0).toUpperCase()
+                          : "?"}
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {participant.name || "Unnamed Participant"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {participant.email}
+                        </p>
+                      </div>
                     </div>
                     <div>
-                      <p className="font-medium">
-                        {participant.name || "Unnamed Participant"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {participant.email}
-                      </p>
+                      {participant.status === "pending" ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          Pending
+                        </span>
+                      ) : participant.status === "accepted" ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          Accepted
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          {participant.status || "Unknown"}
+                        </span>
+                      )}
                     </div>
                   </li>
                 ))}
