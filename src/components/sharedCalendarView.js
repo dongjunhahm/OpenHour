@@ -20,9 +20,12 @@ const SharedCalendarView = ({ availableSlots }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Format date function
-  const formatDate = (dateString) => {
+  // Format date function with optional day offset
+  const formatDate = (dateString, dayOffset = 0) => {
     const date = new Date(dateString);
+    if (dayOffset !== 0) {
+      date.setDate(date.getDate() + dayOffset);
+    }
     return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
   };
 
@@ -32,7 +35,7 @@ const SharedCalendarView = ({ availableSlots }) => {
         Object.keys(slotsByDay).sort().map(day => (
           <div key={day} className="border rounded-lg overflow-hidden">
             <div className="bg-gray-100 px-4 py-2 font-medium">
-              {formatDate(day)}
+              {formatDate(day, 1)} {/* Adding 1 day offset here */}
             </div>
             <ul className="divide-y divide-gray-200">
               {slotsByDay[day].map((slot, index) => (
