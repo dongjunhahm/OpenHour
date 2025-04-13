@@ -88,9 +88,9 @@ export default async function handler(req, res) {
       [calendarId, userEmail, "pending"]
     );
 
-    // Check if user is already a participant (but hasn't joined yet - joined_at is NULL)
+    // Check if user is already a participant but hasn't joined yet (special date '9999-12-31')
     const pendingCheckResult = await client.query(
-      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2 AND joined_at IS NULL",
+      "SELECT id FROM calendar_participants WHERE calendar_id = $1 AND user_id = $2 AND joined_at = '9999-12-31'",
       [calendarId, userId]
     );
 

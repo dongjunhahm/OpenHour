@@ -41,18 +41,18 @@ export default async function handler(req, res) {
     // Get all participants with joined_at to determine status
     const participantsResult = await client.query(
       `SELECT u.id, u.name, u.email, cp.joined_at, cp.is_owner, 
-              CASE WHEN cp.joined_at IS NULL THEN FALSE ELSE TRUE END as has_joined
+              CASE WHEN cp.joined_at = '9999-12-31' THEN FALSE ELSE TRUE END as has_joined
        FROM calendar_participants cp
        JOIN users u ON cp.user_id = u.id
        WHERE cp.calendar_id = $1
-       ORDER BY cp.joined_at ASC NULLS LAST`,
+       ORDER BY CASE WHEN cp.joined_at = '9999-12-31' THEN 1 ELSE 0 END, cp.joined_at ASC`,
       [calendarId]
     );
 
     // Derive status from joined_at data
     const participantsWithStatus = participantsResult.rows.map(participant => ({
       ...participant,
-      // If joined_at is NULL or user hasn't joined, mark as 'pending', otherwise 'active'
+      // If joined_at is the special date '9999-12-31', mark as 'pending', otherwise 'active'
       status: participant.has_joined ? 'active' : 'pending'
     }));
 
