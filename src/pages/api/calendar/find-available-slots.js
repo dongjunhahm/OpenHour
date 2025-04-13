@@ -113,6 +113,13 @@ export default async function handler(req, res) {
     const minDuration = 1 * 60 * 1000;
 
     allEvents.sort((a, b) => a.start - b.start);
+    
+    // Clear existing available slots for this calendar to avoid duplicates
+    await client.query(
+      "DELETE FROM available_slots WHERE calendar_id = $1",
+      [calendarId]
+    );
+    console.log(`Cleared existing available slots for calendar ${calendarId}`);
 
     const availableSlots = [];
     let currentTime = startTime;
@@ -148,15 +155,49 @@ export default async function handler(req, res) {
 
     //storing available slots in the database with automatic splitting of overnight slots
     for (const slot of availableSlots) {
-      // Check if the slot is overnight (spans across midnight)
+      // Check if the slot spans multiple days
       const startDay = new Date(slot.start);
       const endDay = new Date(slot.end);
+      const totalDaysDiff = Math.ceil((endDay - startDay) / (1000 * 60 * 60 * 24));
       
-      if (startDay.getDate() !== endDay.getDate() || 
+      if (totalDaysDiff > 1) {
+        // Slot spans multiple days - need to split into multiple daily slots
+        let currentDayStart = new Date(startDay);
+        
+        for (let day = 0; day < totalDaysDiff; day++) {
+          // For each day, create a slot
+          const dayStart = new Date(currentDayStart);
+          
+          // Calculate midnight at the end of the current day
+          const nextMidnight = new Date(
+            dayStart.getFullYear(),
+            dayStart.getMonth(),
+            dayStart.getDate() + 1, // Next day
+            0, 0, 0, 0 // 00:00:00.000
+          );
+          
+          // Subtract 1 millisecond to get 23:59:59.999
+          const endOfDay = new Date(nextMidnight.getTime() - 1);
+          
+          // For the last day, use the original end time
+          const dayEnd = (day === totalDaysDiff - 1) ? endDay : endOfDay;
+          
+          // Insert the slot for this day
+          await client.query(
+            "INSERT INTO available_slots (calendar_id, start_time, end_time, created_at) VALUES ($1, $2, $3, NOW())",
+            [calendarId, dayStart, dayEnd]
+          );
+          
+          // Move to next day
+          currentDayStart = nextMidnight;
+        }
+        
+        console.log(`Automatically split multi-day slot: ${slot.start} - ${slot.end} into ${totalDaysDiff} days`);
+      } else if (startDay.getDate() !== endDay.getDate() || 
           startDay.getMonth() !== endDay.getMonth() || 
           startDay.getFullYear() !== endDay.getFullYear()) {
         
-        // Split the overnight slot automatically
+        // Split the overnight slot automatically (just one night)
         
         // Calculate midnight at the end of the start day
         const midnight = new Date(
