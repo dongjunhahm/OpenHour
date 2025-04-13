@@ -1,5 +1,6 @@
 import axios from "axios";
 import { pool } from "../db";
+import { parse } from "cookie";
 
 // Log database connection status on startup
 console.log('Database connection environment:', {
@@ -53,6 +54,51 @@ export default async function handler(req, res) {
       userId = userResult.rows[0].id;
     }
 
+    // Parse functions for start and end dates in PST timezone
+    // PST is UTC-8, so:
+    // - 12:00 AM PST = 8:00 AM UTC (same day)
+    // - 11:59:59 PM PST = 7:59:59 AM UTC (next day)
+    
+    // Parse start date to 12:00 AM PST (beginning of the day)
+    const parseStart = (dateString) => {
+      let date;
+      
+      if (dateString.includes('-')) {
+        // For ISO format dates (YYYY-MM-DD)
+        const [year, month, day] = dateString.split('-').map(Number);
+        // Create date object
+        date = new Date(year, month - 1, day);
+      } else {
+        // For other date formats
+        date = new Date(dateString);
+      }
+      
+      // Set time to 12:00:00 AM PST (8:00:00 AM UTC same day)
+      date.setUTCHours(7, 0, 0, 0);
+      
+      return date;
+    };
+
+    // Parse end date to 11:59:59 PM PST (end of the day)
+    const parseEnd = (dateString) => {
+      let date;
+      
+      if (dateString.includes('-')) {
+        // For ISO format dates (YYYY-MM-DD)
+        const [year, month, day] = dateString.split('-').map(Number);
+        // Create date object
+        date = new Date(year, month - 1, day + 1);
+      } else {
+        // For other date formats
+        date = new Date(dateString);
+      }
+      
+      // Set time to 11:59:59 PM PST (7:59:59 AM UTC next day)
+      date.setUTCHours(6, 59, 59, 999);
+      
+      return date;
+    };
+
     // Convert the time format "1:00:00" to minutes (60)
     const minDurationMinutes = parseFloat(minDuration.split(":")[0]);
     
@@ -71,8 +117,8 @@ export default async function handler(req, res) {
         'Shared Calendar', // title
         'Calendar created with OpenHour', // description
         minDurationMinutes, // min_slot_duration in minutes
-        startDate,
-        endDate,
+        parseStart(startDate),
+        parseEnd(endDate),
         userId
       ]
     );
